@@ -1,0 +1,48 @@
+# Publicerar appen på GitHub Pages vid varje push till main.
+# Workflowet aktiverar Pages själv (källa: GitHub Actions), så inget behöver
+# ställas in under Settings → Pages.
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Aktivera Pages om det inte redan är gjort
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Säkerställ att Pages publiceras via Actions
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X PUT "repos/${{ github.repository }}/pages" -f build_type=workflow || true
+
+      - name: Samla filerna som ska publiceras
+        run: rsync -a --exclude .git --exclude .github ./ _site/
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: Publicera
+        id: deployment
+        uses: actions/deploy-pages@v4
