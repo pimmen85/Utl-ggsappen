@@ -1,0 +1,1396 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1f4e79">
+<title>Utläggsappen</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Utlägg">
+<style>
+:root{
+  --bg:#f4f5f7;--card:#ffffff;--ink:#1c2430;--muted:#5b6675;--line:#dfe3e8;
+  --brand:#1f4e79;--brand-2:#2f6fb0;--soft:#e8f0f8;
+  --warn:#9a6700;--warn-bg:#fff4d6;--ok:#2f855a;--ok-bg:#e6f4ea;--bad:#c53030;--bad-bg:#fde8e8;
+  --auto-bg:#fffbea;--r:12px;
+  --shadow:0 1px 2px rgba(16,24,40,.06),0 1px 3px rgba(16,24,40,.10);
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-text-size-adjust:100%}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:var(--brand-2)}
+.top{position:sticky;top:0;z-index:5;background:var(--brand);color:#fff;padding:calc(env(safe-area-inset-top) + 10px) 14px 10px;display:flex;align-items:center;gap:10px;box-shadow:var(--shadow)}
+.top h1{font-size:17px;margin:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+.iconbtn{background:rgba(255,255,255,.14);border:0;color:#fff;border-radius:10px;width:38px;height:38px;font-size:18px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto}
+.iconbtn[hidden]{display:none}
+main{max-width:980px;margin:0 auto;padding:14px 14px calc(env(safe-area-inset-bottom) + 48px)}
+.screen{display:none}.screen.active{display:block}
+.card{background:var(--card);border-radius:var(--r);box-shadow:var(--shadow);padding:14px;margin-bottom:14px}
+.card h2{font-size:13px;margin:0 0 10px;color:var(--brand);text-transform:uppercase;letter-spacing:.06em;font-weight:700}
+.cardhead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.cardhead h2{margin:0}
+.muted{color:var(--muted)}.small{font-size:13px}.tiny{font-size:12px}
+.btn{border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px 14px;cursor:pointer;font-weight:600;display:inline-flex;align-items:center;gap:6px;line-height:1.2;white-space:nowrap}
+.btn:disabled{opacity:.5;cursor:default}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+.btn.accent{background:var(--brand-2);border-color:var(--brand-2);color:#fff}
+.btn.danger{color:var(--bad);border-color:#f3c4c4}
+.btn.small{padding:6px 10px;font-size:13px;border-radius:8px}
+.btn.block{width:100%;justify-content:center}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.field{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}
+.field label{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.field input,.field select,.field textarea{border:1px solid var(--line);border-radius:9px;padding:9px 10px;background:#fff;width:100%;min-width:0}
+.field input:focus,.field select:focus,.field textarea:focus{outline:2px solid var(--brand-2);outline-offset:0;border-color:var(--brand-2)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+@media (max-width:560px){.grid2{grid-template-columns:1fr}}
+.help{font-size:13px;color:var(--muted);margin:-4px 0 10px}
+.list{display:flex;flex-direction:column;gap:10px}
+.report-item{display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--line);border-radius:10px;cursor:pointer;background:#fff}
+.report-item:hover{border-color:var(--brand-2)}
+.report-item .t{font-weight:700}
+.report-item .meta{font-size:13px;color:var(--muted)}
+.report-item .sum{margin-left:auto;font-weight:700;white-space:nowrap}
+.empty{padding:22px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:10px}
+.att{display:grid;grid-template-columns:72px 1fr auto;gap:12px;align-items:center;padding:10px;border:1px solid var(--line);border-radius:10px;background:#fff}
+.att .thumb{width:72px;height:72px;border-radius:8px;object-fit:cover;background:var(--soft);border:1px solid var(--line);cursor:zoom-in}
+.att .thumb.ph{display:flex;align-items:center;justify-content:center;font-size:24px}
+.att .name{font-weight:600;word-break:break-word}
+.att .st{font-size:13px;margin-top:2px}
+.att .bils{display:inline-flex;gap:4px;flex-wrap:wrap;margin-top:4px}
+.att .ops{display:flex;flex-direction:column;gap:6px}
+@media (max-width:560px){.att{grid-template-columns:64px 1fr}.att .ops{grid-column:1/-1;flex-direction:row}}
+.badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:600;background:var(--soft);color:var(--brand)}
+.badge.ok{background:var(--ok-bg);color:var(--ok)}
+.badge.warn{background:var(--warn-bg);color:var(--warn)}
+.badge.bad{background:var(--bad-bg);color:var(--bad)}
+.badge.busy{background:#e9edf3;color:#334}
+.num{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;border:2px solid #1a4bd8;color:#1a4bd8;font-weight:700;font-size:13px;background:#fff;flex:0 0 auto}
+.row-card{border:1px solid var(--line);border-radius:10px;padding:10px;background:#fff}
+.row-card.auto{background:var(--auto-bg)}
+.row-card .rh{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.row-card .rh .sp{flex:1}
+.row-card .rgrid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+.row-card .rgrid .field{margin:0}
+.row-card .rgrid .wide{grid-column:span 2}
+@media (max-width:820px){.row-card .rgrid{grid-template-columns:repeat(3,1fr)}}
+@media (max-width:560px){.row-card .rgrid{grid-template-columns:repeat(2,1fr)}.row-card .rgrid .wide{grid-column:span 2}}
+.row-card input.amount{text-align:right;font-variant-numeric:tabular-nums}
+.sumbar{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px 14px;border-radius:10px;background:var(--soft);font-weight:700}
+.sumbar .v{font-variant-numeric:tabular-nums}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:var(--soft);font-size:13px;color:var(--brand)}
+.pill.warn{background:var(--warn-bg);color:var(--warn)}
+.progress{height:6px;background:#e9edf3;border-radius:3px;overflow:hidden;margin-top:8px}
+.progress>div{height:100%;background:var(--brand-2);width:0;transition:width .2s}
+#toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 18px);transform:translateX(-50%);background:#1c2430;color:#fff;padding:10px 16px;border-radius:10px;font-size:14px;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .2s;z-index:50;max-width:92vw;text-align:center}
+#toast.show{opacity:1}
+#toast.bad{background:var(--bad)}
+#toast.ok{background:var(--ok)}
+.frame{width:100%;height:min(75vh,900px);border:1px solid var(--line);border-radius:10px;background:#fff}
+dialog{border:0;border-radius:14px;padding:16px;max-width:96vw;width:640px;box-shadow:0 10px 40px rgba(0,0,0,.25)}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+dialog h3{margin:0 0 8px}
+#sigCanvas{width:100%;height:220px;border:1px dashed var(--line);border-radius:10px;background:#fff;touch-action:none;display:block}
+.sigprev{max-width:100%;max-height:90px;border:1px solid var(--line);border-radius:8px;background:#fff;padding:4px}
+.footer{text-align:center;color:var(--muted);font-size:12px;margin-top:18px}
+.filebtns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media (min-width:561px){.filebtns{grid-template-columns:auto auto;justify-content:start}}
+.hidden{display:none !important}
+.kbd{font-family:ui-monospace,Menlo,monospace;font-size:13px;background:#f0f2f5;padding:1px 5px;border-radius:5px}
+.check{display:flex;align-items:center;gap:8px;margin:6px 0}
+.check input{width:18px;height:18px}
+</style>
+</head>
+<body>
+<header class="top">
+  <button class="iconbtn" id="btnBack" title="Tillbaka" hidden>‹</button>
+  <h1 id="topTitle">Utläggsappen</h1>
+  <button class="iconbtn" id="btnSettings" title="Inställningar">⚙</button>
+</header>
+
+<main>
+  <!-- ── RAPPORTER ── -->
+  <section id="scrReports" class="screen active">
+    <div class="card">
+      <div class="cardhead">
+        <h2>Utläggsrapporter</h2>
+        <button class="btn primary" id="btnNewReport">+ Ny rapport</button>
+      </div>
+      <div id="reportList" class="list"></div>
+    </div>
+    <div class="card small muted" id="introCard">
+      <b>Så funkar det:</b> skapa en rapport, fota eller ladda upp kvitton (bild eller PDF), granska raderna och skapa en samlad PDF med redovisning och bilagor på en sida.
+      Allt sparas lokalt i den här webbläsaren.
+      <span id="aiHint"></span>
+    </div>
+    <div class="footer" id="appVersion"></div>
+  </section>
+
+  <!-- ── RAPPORT ── -->
+  <section id="scrReport" class="screen">
+    <div class="card">
+      <h2>Uppgifter</h2>
+      <div class="field"><label for="rTitle">Rapportens namn</label><input id="rTitle" data-r="title" placeholder="t.ex. Augusti 2026"></div>
+      <div class="grid2">
+        <div class="field"><label for="rName">Namn</label><input id="rName" data-r="name" autocomplete="name"></div>
+        <div class="field"><label for="rEmp">Anställningsnummer</label><input id="rEmp" data-r="employeeNo" inputmode="numeric"></div>
+        <div class="field"><label for="rPurpose">Syfte</label><input id="rPurpose" data-r="purpose" placeholder="Utlägg"></div>
+        <div class="field"><label for="rDest">Ev Resmål</label><input id="rDest" data-r="destination"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="cardhead">
+        <h2>Kvitton (bilagor)</h2>
+        <span class="pill" id="modePill"></span>
+      </div>
+      <div class="filebtns">
+        <button class="btn accent" id="btnCam">📷 Fota kvitto</button>
+        <button class="btn" id="btnFiles">📎 Välj bild/PDF</button>
+      </div>
+      <input type="file" id="camInput" accept="image/*" capture="environment" class="hidden">
+      <input type="file" id="fileInput" accept="image/*,application/pdf,.pdf,.heic,.heif" multiple class="hidden">
+      <p class="help" style="margin-top:8px">Varje kvitto blir en rad nedan. Belopp, moms, datum och beskrivning läses av automatiskt – kontrollera och rätta vid behov.</p>
+      <div id="attachList" class="list"></div>
+    </div>
+
+    <div class="card">
+      <div class="cardhead">
+        <h2>Utläggsrader</h2>
+        <button class="btn small" id="btnAddRow">+ Rad utan kvitto</button>
+      </div>
+      <div id="rowList" class="list"></div>
+      <div class="sumbar" style="margin-top:12px">
+        <span>Totalt belopp att utbetala</span><span class="v"><span id="sumTotal">0,00</span> kr</span>
+        <span class="muted small" style="flex-basis:100%">varav moms <span id="sumVat" class="v">0,00</span> kr</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Skapa</h2>
+      <div class="actions">
+        <button class="btn primary" id="btnPdf">📄 Skapa PDF</button>
+        <button class="btn" id="btnXlsx">📊 Ladda ner Excel</button>
+        <button class="btn" id="btnSign">✍️ Signatur</button>
+        <button class="btn danger" id="btnDeleteReport" style="margin-left:auto">Ta bort rapport</button>
+      </div>
+      <p class="help" style="margin:10px 0 0" id="signHint"></p>
+    </div>
+  </section>
+
+  <!-- ── INSTÄLLNINGAR ── -->
+  <section id="scrSettings" class="screen">
+    <div class="card">
+      <h2>Standardvärden</h2>
+      <p class="help">Fylls i automatiskt i nya rapporter och rader. Uppdateras när du sparar en rapport.</p>
+      <div class="grid2">
+        <div class="field"><label for="sName">Namn</label><input id="sName" data-s="name"></div>
+        <div class="field"><label for="sEmp">Anställningsnummer</label><input id="sEmp" data-s="employeeNo" inputmode="numeric"></div>
+        <div class="field"><label for="sCompany">Företag (sidhuvud)</label><input id="sCompany" data-s="company"></div>
+        <div class="field"><label for="sPurpose">Syfte</label><input id="sPurpose" data-s="purpose"></div>
+        <div class="field"><label for="sProject">Projekt</label><input id="sProject" data-s="project"></div>
+        <div class="field"><label for="sKst">Kst</label><input id="sKst" data-s="kst"></div>
+        <div class="field"><label for="sAccount">Konto</label><input id="sAccount" data-s="account"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Signatur</h2>
+      <p class="help">Ritas in i fältet <b>Sign</b> tillsammans med dagens datum när du skapar PDF:en.</p>
+      <div id="sigBox"></div>
+      <div class="actions" style="margin-top:10px">
+        <button class="btn" id="btnSigDraw">✍️ Rita signatur</button>
+        <button class="btn danger" id="btnSigClear">Ta bort</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Kvittoläsning med AI</h2>
+      <p class="help">Med en API-nyckel från Anthropic (Claude) läses kvittona av med hög träffsäkerhet, inklusive beskrivning. Nyckeln sparas bara i den här webbläsaren och skickas enbart till Anthropic. Utan nyckel används lokal OCR i webbläsaren.</p>
+      <div class="field"><label for="sKey">API-nyckel</label><input id="sKey" data-s="apiKey" type="password" autocomplete="off" placeholder="sk-ant-…"></div>
+      <div class="actions">
+        <button class="btn" id="btnTestKey">Testa nyckel</button>
+        <span id="keyStatus" class="small muted" style="align-self:center"></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Offline-OCR</h2>
+      <p class="help">Den lokala kvittoläsningen (Tesseract, svenska) laddar ner ca 7 MB första gången den används. Hämta i förväg om du vill kunna läsa kvitton utan nät.</p>
+      <div class="actions">
+        <button class="btn" id="btnOcrDl">Hämta offline-OCR</button>
+        <span id="ocrStatus" class="small muted" style="align-self:center"></span>
+      </div>
+    </div>
+    <div class="footer" id="appVersion2"></div>
+  </section>
+
+  <!-- ── FÖRHANDSGRANSKNING ── -->
+  <section id="scrPreview" class="screen">
+    <div class="card">
+      <div class="cardhead">
+        <h2>Färdig PDF</h2>
+        <span class="small muted" id="previewInfo"></span>
+      </div>
+      <div class="actions" style="margin-bottom:12px">
+        <button class="btn primary" id="btnDownload">⬇︎ Spara PDF</button>
+        <button class="btn" id="btnOpen">Öppna i ny flik</button>
+        <button class="btn" id="btnShare" hidden>Dela…</button>
+      </div>
+      <iframe class="frame" id="pdfFrame" title="Förhandsgranskning"></iframe>
+      <p class="help" style="margin-top:10px">Skicka PDF:en för attest och vidare till löneavdelningen. Bilagorna ligger överst och redovisningen nederst, på en A3-sida (fler sidor om bilagorna inte får plats).</p>
+    </div>
+  </section>
+</main>
+
+<div id="toast"></div>
+
+<dialog id="dlgSign">
+  <h3>Rita din signatur</h3>
+  <p class="help">Skriv med fingret, pennan eller musen.</p>
+  <canvas id="sigCanvas"></canvas>
+  <div class="actions" style="margin-top:12px;justify-content:flex-end">
+    <button class="btn" id="btnSigReset">Rensa</button>
+    <button class="btn" id="btnSigCancel">Avbryt</button>
+    <button class="btn primary" id="btnSigDone">Spara</button>
+  </div>
+</dialog>
+
+<datalist id="dlDesc">
+  <option value="Drivmedel hyrbil"><option value="Drivmedel"><option value="Laddning hyrbil"><option value="Laddning bil">
+  <option value="Parkering"><option value="Parkering på hotellet"><option value="Hotell"><option value="Tågbiljett"><option value="Taxi">
+  <option value="Kontorsmateriel"><option value="Lunch"><option value="Övrigt">
+</datalist>
+
+<script>
+// Polyfill för nyare JS-API som pdf.js använder (saknas i äldre Safari/Chrome).
+for (const C of [Map, WeakMap]) {
+  if (!C.prototype.getOrInsertComputed) C.prototype.getOrInsertComputed = function (k, f) { if (!this.has(k)) this.set(k, f(k)); return this.get(k); };
+  if (!C.prototype.getOrInsert) C.prototype.getOrInsert = function (k, v) { if (!this.has(k)) this.set(k, v); return this.get(k); };
+}
+</script>
+<script src="vendor/pdf-lib.min.js"></script>
+<script src="vendor/fflate.js"></script>
+<script type="module">
+import * as pdfjsLib from './vendor/pdfjs/pdf.min.mjs';
+
+// Höjs vid varje publicerad ändring, så man kan se om enheten har senaste bygget.
+// Höj även CACHE i sw.js.
+const APP_VERSION = '1.0';
+const APP_BUILD = '2026-09-04';
+
+const $ = (id) => document.getElementById(id);
+const BASE = new URL('./', location.href).href;
+pdfjsLib.GlobalWorkerOptions.workerSrc = BASE + 'vendor/pdfjs/pdf.worker.min.mjs';
+const PDFJS_WASM = BASE + 'vendor/pdfjs/wasm/';
+
+const CATEGORIES = ['Drivmedel', 'Laddning', 'Parkering', 'Hotell', 'Resa', 'Måltid', 'Kontorsmateriel', 'Övrigt'];
+
+// ---------- Inställningar (localStorage) ----------
+const SETTINGS_KEY = 'utlaggsappen.settings';
+const DEFAULT_SETTINGS = {
+  name: '', employeeNo: '', company: 'Midroc Mechanical AB', purpose: 'Utlägg', destination: '',
+  project: '', kst: '', account: '', apiKey: '', aiModel: 'claude-opus-5', signature: '',
+};
+let settings = loadSettings();
+function loadSettings() {
+  try { return { ...DEFAULT_SETTINGS, ...JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}') }; }
+  catch { return { ...DEFAULT_SETTINGS }; }
+}
+function saveSettings() { try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch {} }
+
+// ---------- IndexedDB ----------
+const DB_NAME = 'utlaggsappen', DB_VERSION = 1;
+let dbPromise = null;
+function db() {
+  if (dbPromise) return dbPromise;
+  dbPromise = new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = () => {
+      const d = req.result;
+      if (!d.objectStoreNames.contains('reports')) d.createObjectStore('reports', { keyPath: 'id' });
+      if (!d.objectStoreNames.contains('attachments')) {
+        const s = d.createObjectStore('attachments', { keyPath: 'id' });
+        s.createIndex('reportId', 'reportId');
+      }
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+  return dbPromise;
+}
+const reqp = (r) => new Promise((res, rej) => { r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+async function dbPut(store, val) { const d = await db(); return reqp(d.transaction(store, 'readwrite').objectStore(store).put(val)); }
+async function dbGet(store, key) { const d = await db(); return reqp(d.transaction(store).objectStore(store).get(key)); }
+async function dbDel(store, key) { const d = await db(); return reqp(d.transaction(store, 'readwrite').objectStore(store).delete(key)); }
+async function dbAll(store) { const d = await db(); return reqp(d.transaction(store).objectStore(store).getAll()); }
+async function dbByIndex(store, index, key) { const d = await db(); return reqp(d.transaction(store).objectStore(store).index(index).getAll(key)); }
+
+const uid = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2, 10));
+
+// ---------- Hjälpfunktioner ----------
+function toast(msg, type = '') {
+  const t = $('toast'); t.textContent = msg; t.className = 'show ' + type;
+  clearTimeout(toast._t); toast._t = setTimeout(() => { t.className = ''; }, type === 'bad' ? 5000 : 2800);
+}
+function esc(s) { return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+function fmtAmount(n) {
+  if (n === null || n === undefined || n === '' || isNaN(n)) return '';
+  const neg = n < 0; const s = Math.abs(Number(n)).toFixed(2);
+  let [i, d] = s.split('.'); i = i.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+  return (neg ? '-' : '') + i + ',' + d;
+}
+function fmtInput(n) { return (n === null || n === undefined || n === '' || isNaN(n)) ? '' : Number(n).toFixed(2).replace('.', ','); }
+function parseNum(s) {
+  if (s === null || s === undefined) return null;
+  const t = String(s).replace(/\s/g, '').replace(/kr|sek/gi, '').replace(',', '.');
+  if (t === '') return null;
+  const v = parseFloat(t); return isNaN(v) ? null : v;
+}
+const round2 = (n) => Math.round(n * 100) / 100;
+function todayISO() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function monthTitle(d = new Date()) { const s = d.toLocaleDateString('sv-SE', { month: 'long', year: 'numeric' }); return s.charAt(0).toUpperCase() + s.slice(1); }
+function isPdfFile(f) { return f.type === 'application/pdf' || /\.pdf$/i.test(f.name || ''); }
+function blobToDataURL(b) { return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(b); }); }
+async function blobToBase64(b) { return (await blobToDataURL(b)).split(',')[1]; }
+function dataUrlToBytes(u) { const b = atob(u.split(',')[1]); const a = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) a[i] = b.charCodeAt(i); return a; }
+function canvasToBlob(c, type = 'image/jpeg', q = 0.85) { return new Promise((res) => c.toBlob((b) => res(b), type, q)); }
+function loadImg(url) { return new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error('Bilden kunde inte läsas (HEIC stöds inte av webbläsaren – välj JPEG i kamerainställningarna)')); i.src = url; }); }
+function loadScript(src) { return new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = () => rej(new Error('Kunde inte ladda ' + src)); document.head.appendChild(s); }); }
+function safeFileName(s) { return String(s || 'utlagg').replace(/[\\/:*?"<>|]+/g, '-').trim(); }
+const debounce = (fn, ms) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
+
+// ---------- Tillstånd ----------
+let reports = [];
+let current = null;      // aktuell rapport
+let attachments = [];    // bilagor för aktuell rapport
+let lastPdf = null;      // {blob, name, url}
+let screenStack = [];
+
+function showScreen(id, title) {
+  document.querySelectorAll('.screen').forEach((s) => s.classList.toggle('active', s.id === id));
+  $('topTitle').textContent = title || 'Utläggsappen';
+  $('btnBack').hidden = id === 'scrReports';
+  $('btnSettings').hidden = id === 'scrSettings';
+  window.scrollTo(0, 0);
+}
+
+// ---------- Rapporter ----------
+async function loadReports() {
+  reports = (await dbAll('reports')).sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+}
+function reportTotals(r) {
+  let total = 0, vat = 0;
+  for (const row of r.rows || []) { total += Number(row.total) || 0; vat += Number(row.vat) || 0; }
+  return { total: round2(total), vat: round2(vat) };
+}
+function renderReports() {
+  const el = $('reportList');
+  if (!reports.length) { el.innerHTML = '<div class="empty">Inga rapporter ännu. Tryck på <b>+ Ny rapport</b> för att börja.</div>'; return; }
+  el.innerHTML = reports.map((r) => {
+    const t = reportTotals(r);
+    return `<div class="report-item" data-id="${r.id}">
+      <div><div class="t">${esc(r.title || 'Utan namn')}</div>
+      <div class="meta">${(r.rows || []).length} rader · uppdaterad ${new Date(r.updatedAt || r.createdAt).toLocaleDateString('sv-SE')}</div></div>
+      <div class="sum">${fmtAmount(t.total)} kr</div></div>`;
+  }).join('');
+  el.querySelectorAll('.report-item').forEach((it) => it.onclick = () => openReport(it.dataset.id));
+}
+async function newReport() {
+  const r = {
+    id: uid(), title: monthTitle(), name: settings.name, employeeNo: settings.employeeNo,
+    purpose: settings.purpose || 'Utlägg', destination: settings.destination || '',
+    rows: [], createdAt: Date.now(), updatedAt: Date.now(),
+  };
+  await dbPut('reports', r); reports.unshift(r);
+  await openReport(r.id);
+}
+async function openReport(id) {
+  current = await dbGet('reports', id);
+  if (!current) { toast('Rapporten hittades inte', 'bad'); return; }
+  current.rows = current.rows || [];
+  attachments = (await dbByIndex('attachments', 'reportId', id)).sort((a, b) => a.order - b.order);
+  for (const k of ['title', 'name', 'employeeNo', 'purpose', 'destination']) {
+    const inp = document.querySelector(`[data-r="${k}"]`); inp.value = current[k] || '';
+  }
+  renderReport();
+  showScreen('scrReport', current.title || 'Rapport');
+}
+const saveReport = debounce(async () => {
+  if (!current) return;
+  current.updatedAt = Date.now();
+  await dbPut('reports', current);
+  // Kom ihåg standardvärden
+  let changed = false;
+  for (const k of ['name', 'employeeNo', 'purpose', 'destination']) if (current[k] && settings[k] !== current[k]) { settings[k] = current[k]; changed = true; }
+  const last = [...current.rows].reverse().find((r) => r.project || r.kst || r.account);
+  if (last) for (const k of ['project', 'kst', 'account']) if (last[k] && settings[k] !== last[k]) { settings[k] = last[k]; changed = true; }
+  if (changed) saveSettings();
+  const idx = reports.findIndex((r) => r.id === current.id); if (idx >= 0) reports[idx] = current;
+  $('topTitle').textContent = current.title || 'Rapport';
+}, 350);
+
+document.querySelectorAll('[data-r]').forEach((inp) => inp.addEventListener('input', () => {
+  if (!current) return; current[inp.dataset.r] = inp.value; saveReport();
+}));
+
+function renderReport() { renderMode(); renderAttachments(); renderRows(); renderSums(); renderSignHint(); }
+function renderMode() {
+  const ai = !!settings.apiKey;
+  $('modePill').textContent = ai ? '✨ AI-läsning (Claude)' : '🔍 Lokal OCR';
+  $('modePill').className = 'pill' + (ai ? '' : ' warn');
+  $('modePill').title = ai ? 'Kvitton läses av med Claude' : 'Lägg in en API-nyckel under inställningar för bättre avläsning';
+}
+function renderSums() {
+  const t = reportTotals(current);
+  $('sumTotal').textContent = fmtAmount(t.total); $('sumVat').textContent = fmtAmount(t.vat);
+}
+function renderSignHint() {
+  $('signHint').textContent = settings.signature ? 'Din signatur ritas in i Sign-fältet. Attest görs av chefen efteråt.' : 'Ingen signatur sparad – PDF:en får tomt Sign-fält (rita en under Signatur).';
+}
+
+// ---------- Bilagor ----------
+function bilagaNumbersFor(att, page) {
+  const nums = [];
+  current.rows.forEach((r, i) => { if (r.attachmentId === att.id && (page === undefined || (r.page || 0) === page)) nums.push(i + 1); });
+  return nums;
+}
+function labelForNums(nums) {
+  if (!nums.length) return '';
+  const s = [...nums].sort((a, b) => a - b);
+  if (s.length > 1 && s[s.length - 1] - s[0] === s.length - 1) return `${s[0]}–${s[s.length - 1]}`;
+  return s.join(', ');
+}
+function renderAttachments() {
+  const el = $('attachList');
+  if (!attachments.length) { el.innerHTML = '<div class="empty">Inga kvitton ännu. Fota eller välj en fil.</div>'; return; }
+  el.innerHTML = attachments.map((a) => {
+    const nums = bilagaNumbersFor(a);
+    let st = '';
+    if (a.status === 'processing') st = `<span class="badge busy">${esc(a.statusText || 'Läser av…')}</span><div class="progress"><div style="width:${Math.round((a.progress || 0) * 100)}%"></div></div>`;
+    else if (a.status === 'error') st = `<span class="badge bad">Fel</span> <span class="small">${esc(a.statusText || '')}</span>`;
+    else if (a.status === 'done') {
+      const src = a.extraction?.source === 'ai' ? 'AI' : 'lokal OCR';
+      const n = a.extraction?.receipts?.length || 0;
+      st = `<span class="badge ok">Avläst (${src})</span> <span class="small muted">${n} kvitto${n === 1 ? '' : 'n'}${a.extraction?.fallbackReason ? ' · ' + esc(a.extraction.fallbackReason) : ''}</span>`;
+    } else st = '<span class="badge">Väntar</span>';
+    return `<div class="att" data-id="${a.id}">
+      ${a.thumb ? `<img class="thumb" src="${a.thumb}" alt="" data-act="view">` : '<div class="thumb ph">📄</div>'}
+      <div><div class="name">${esc(a.name)}</div><div class="st">${st}</div>
+        <div class="bils">${nums.map((n) => `<span class="num">${n}</span>`).join('')}${nums.length ? '' : '<span class="tiny muted">Ingen rad kopplad</span>'}</div></div>
+      <div class="ops"><button class="btn small" data-act="redo">Läs av igen</button><button class="btn small danger" data-act="del">Ta bort</button></div>
+    </div>`;
+  }).join('');
+  el.querySelectorAll('[data-act]').forEach((b) => b.onclick = (e) => {
+    const id = e.target.closest('.att').dataset.id; const att = attachments.find((a) => a.id === id);
+    if (b.dataset.act === 'del') deleteAttachment(att);
+    else if (b.dataset.act === 'redo') { att.rerun = true; processAttachment(att); }
+    else if (b.dataset.act === 'view') viewAttachment(att);
+  });
+}
+function viewAttachment(att) {
+  const url = URL.createObjectURL(att.blob); window.open(url, '_blank'); setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
+async function deleteAttachment(att) {
+  if (!confirm(`Ta bort "${att.name}" och raderna som hör till?`)) return;
+  attachments = attachments.filter((a) => a.id !== att.id);
+  current.rows = current.rows.filter((r) => r.attachmentId !== att.id);
+  await dbDel('attachments', att.id); saveReport(); renderReport();
+}
+
+async function addFiles(files) {
+  if (!current) return;
+  for (const file of files) {
+    const att = {
+      id: uid(), reportId: current.id, order: (attachments.at(-1)?.order || 0) + 1,
+      name: file.name || ('Kvitto ' + (attachments.length + 1) + (isPdfFile(file) ? '.pdf' : '.jpg')),
+      mime: isPdfFile(file) ? 'application/pdf' : (file.type || 'image/jpeg'), blob: file,
+      pages: [], thumb: '', status: 'pending', extraction: null, createdAt: Date.now(),
+    };
+    attachments.push(att);
+    await dbPut('attachments', att);
+    renderAttachments();
+    processAttachment(att); // körs i bakgrunden, flera i följd
+  }
+}
+$('btnCam').onclick = () => $('camInput').click();
+$('btnFiles').onclick = () => $('fileInput').click();
+$('camInput').onchange = (e) => { addFiles([...e.target.files]); e.target.value = ''; };
+$('fileInput').onchange = (e) => { addFiles([...e.target.files]); e.target.value = ''; };
+
+// Kö så att bara en bilaga läses av åt gången (OCR är tungt).
+let queue = Promise.resolve();
+function processAttachment(att) {
+  att.status = 'processing'; att.statusText = 'Väntar…'; att.progress = 0; renderAttachments();
+  queue = queue.then(() => runExtraction(att)).catch((e) => console.error(e));
+  return queue;
+}
+async function runExtraction(att) {
+  const setStatus = (text, progress) => { if (att.status !== 'processing') return; att.statusText = text; if (progress !== undefined) att.progress = progress; renderAttachments(); };
+  try {
+    setStatus('Förbereder…', 0);
+    if (!att.pages.length) {
+      att.pages = await fileToPages(att.blob);
+      att.thumb = await makeThumb(att.pages[0]);
+    }
+    let result = null;
+    if (settings.apiKey) {
+      setStatus('Läser av med AI…', 0.3);
+      try { result = await aiExtract(att); }
+      catch (e) { console.warn('AI-läsning misslyckades', e); att.aiError = e.message; toast('AI-läsning misslyckades: ' + e.message + ' – använder lokal OCR', 'bad'); }
+    }
+    if (!result) {
+      result = await localExtract(att, (m) => {
+        if (m.status === 'recognizing text') setStatus('Lokal OCR…', 0.4 + 0.6 * (m.progress || 0));
+        else if (m.status) setStatus(translateTessStatus(m.status), 0.2);
+      });
+      if (att.aiError) result.fallbackReason = 'AI misslyckades';
+    }
+    att.extraction = result; att.status = 'done'; att.statusText = ''; att.progress = 1;
+    applyExtraction(att, result);
+  } catch (e) {
+    console.error(e);
+    att.status = 'error'; att.statusText = e.message || String(e);
+    if (!current.rows.some((r) => r.attachmentId === att.id)) addRow({ attachmentId: att.id, page: 0, auto: true, confidence: 'low' });
+  }
+  await dbPut('attachments', att);
+  saveReport(); renderReport();
+}
+function translateTessStatus(s) {
+  return ({ 'loading tesseract core': 'Laddar OCR…', 'initializing tesseract': 'Startar OCR…', 'loading language traineddata': 'Laddar svenska…', 'initializing api': 'Startar OCR…', 'loaded language traineddata': 'Laddar svenska…' })[s] || 'OCR…';
+}
+function applyExtraction(att, result) {
+  // Ersätt tidigare automatiska rader från samma bilaga
+  if (att.rerun) { current.rows = current.rows.filter((r) => !(r.attachmentId === att.id && r.auto)); att.rerun = false; }
+  const receipts = result.receipts || [];
+  if (!receipts.length) {
+    addRow({ attachmentId: att.id, page: 0, auto: true, confidence: 'low' });
+    toast('Inget kvitto kunde tolkas i ' + att.name + ' – fyll i raden manuellt', 'bad');
+    return;
+  }
+  for (const rc of receipts) {
+    addRow({
+      attachmentId: att.id, page: rc.page || 0, date: rc.date || '', total: rc.total ?? null, vat: rc.vat ?? null,
+      localAmount: rc.total ?? null, description: rc.description || '', auto: true, confidence: rc.confidence || 'medium',
+      currency: rc.currency || 'SEK', merchant: rc.merchant || '',
+    });
+  }
+}
+
+// ---------- Bild/PDF → sidor ----------
+async function fileToPages(file) {
+  if (isPdfFile(file)) return pdfToPages(file);
+  return [await imageToPage(file)];
+}
+async function imageToPage(file) {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await loadImg(url);
+    const max = 2000; const scale = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+    const c = document.createElement('canvas');
+    c.width = Math.round(img.naturalWidth * scale); c.height = Math.round(img.naturalHeight * scale);
+    const ctx = c.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
+    ctx.drawImage(img, 0, 0, c.width, c.height);
+    return { jpeg: await canvasToBlob(c), width: c.width, height: c.height, text: '', lines: [], rotate: 0 };
+  } finally { URL.revokeObjectURL(url); }
+}
+async function pdfToPages(file) {
+  const data = new Uint8Array(await file.arrayBuffer());
+  const pdf = await pdfjsLib.getDocument({ data, wasmUrl: PDFJS_WASM }).promise;
+  const n = Math.min(pdf.numPages, 10); const pages = [];
+  for (let i = 1; i <= n; i++) {
+    const page = await pdf.getPage(i);
+    const vp1 = page.getViewport({ scale: 1 });
+    const { text, lines } = await pageTextLines(page, vp1);
+    const scale = Math.min(2.2, 2000 / Math.max(vp1.width, vp1.height));
+    const vp = page.getViewport({ scale });
+    const c = document.createElement('canvas'); c.width = Math.round(vp.width); c.height = Math.round(vp.height);
+    await page.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
+    pages.push({ jpeg: await canvasToBlob(c), width: c.width, height: c.height, text, lines: lines.map((l) => ({ ...l, x0: l.x0 * scale, x1: l.x1 * scale, y: l.y * scale })), rotate: page.rotate || 0 });
+  }
+  return pages;
+}
+async function pageTextLines(page, vp) {
+  const tc = await page.getTextContent();
+  const items = tc.items.filter((it) => it.str && it.str.trim()).map((it) => {
+    const [a, b, c, d, e, f] = it.transform; const size = Math.hypot(b, d) || 10;
+    return { str: it.str, x0: e, x1: e + (it.width || 0), y: vp.height - f, size };
+  });
+  items.sort((p, q) => (p.y - q.y) || (p.x0 - q.x0));
+  const lines = [];
+  for (const it of items) {
+    const last = lines[lines.length - 1];
+    if (last && Math.abs(last.y - it.y) <= Math.max(2.5, it.size * 0.45)) {
+      const gap = it.x0 - last.x1;
+      last.text += (gap > it.size * 0.25 ? ' ' : '') + it.str;
+      last.x1 = Math.max(last.x1, it.x1); last.x0 = Math.min(last.x0, it.x0);
+    } else lines.push({ text: it.str, x0: it.x0, x1: it.x1, y: it.y });
+  }
+  return { text: lines.map((l) => l.text).join('\n'), lines };
+}
+async function makeThumb(pg) {
+  const url = URL.createObjectURL(pg.jpeg);
+  try {
+    const img = await loadImg(url); const s = 160 / Math.max(img.naturalWidth, img.naturalHeight);
+    const c = document.createElement('canvas'); c.width = Math.round(img.naturalWidth * s); c.height = Math.round(img.naturalHeight * s);
+    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+    return c.toDataURL('image/jpeg', 0.7);
+  } finally { URL.revokeObjectURL(url); }
+}
+
+// ---------- AI-läsning (Claude) ----------
+const AI_SYSTEM = `Du läser kvitton åt en anställd som ska fylla i en svensk utläggsredovisning.
+Du får en bilaga (foto, skanning eller PDF) som kan innehålla ett eller flera kvitton, ibland på flera sidor.
+Hitta varje enskilt kvitto och ange för varje kvitto:
+- page: sidnummer i bilagan där kvittot finns (1 för första sidan)
+- date: köp-/betaldatum som ÅÅÅÅ-MM-DD (null om det inte går att läsa)
+- merchant: butik eller leverantör
+- total_incl_vat: totalbeloppet som faktiskt betalades, inklusive moms
+- vat_amount: momsbeloppet totalt (summan om flera momssatser; 0 om kvittot anger att moms saknas; null om det inte framgår)
+- currency: valutakod, t.ex. SEK
+- description: kort beskrivning på svenska i samma stil som en utläggsblankett, t.ex. "Drivmedel hyrbil", "Parkering på hotellet", "Laddning hyrbil", "Kontorsmateriel", "Tågbiljett Göteborg–Stockholm"
+- category: en av ${CATEGORIES.join(', ')}
+- confidence: 0–1, hur säker du är på belopp och datum
+- notes: kort anmärkning om något är oklart, annars null
+Blanda inte ihop nettobelopp med totalbelopp. Om samma köp förekommer två gånger (t.ex. kortkvitto och kassakvitto) returneras det bara en gång. Returnera en tom lista om bilagan inte innehåller något kvitto. Använd punkt som decimaltecken i tal.`;
+
+const nullable = (t) => ({ anyOf: [{ type: t }, { type: 'null' }] });
+const RECEIPT_SCHEMA = {
+  type: 'object',
+  properties: {
+    receipts: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          page: { type: 'integer' }, date: nullable('string'), merchant: nullable('string'),
+          total_incl_vat: nullable('number'), vat_amount: nullable('number'), currency: nullable('string'),
+          description: { type: 'string' }, category: { type: 'string', enum: CATEGORIES },
+          confidence: { type: 'number' }, notes: nullable('string'),
+        },
+        required: ['page', 'date', 'merchant', 'total_incl_vat', 'vat_amount', 'currency', 'description', 'category', 'confidence', 'notes'],
+        additionalProperties: false,
+      },
+    },
+  },
+  required: ['receipts'], additionalProperties: false,
+};
+function aiHeaders() {
+  return {
+    'content-type': 'application/json',
+    'x-api-key': settings.apiKey,
+    'anthropic-version': '2023-06-01',
+    'anthropic-dangerous-direct-browser-access': 'true',
+    'anthropic-beta': 'server-side-fallback-2026-07-01',
+  };
+}
+async function aiExtract(att) {
+  const content = [];
+  const usePdf = att.mime === 'application/pdf' && att.blob.size < 8 * 1024 * 1024 && att.pages.length <= 10;
+  if (usePdf) content.push({ type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: await blobToBase64(att.blob) } });
+  else for (const p of att.pages) content.push({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: await blobToBase64(p.jpeg) } });
+  content.push({ type: 'text', text: `Läs av kvittot/kvittona i bilagan (${att.pages.length} sid${att.pages.length === 1 ? 'a' : 'or'}) och svara enligt schemat.` });
+  const body = {
+    model: settings.aiModel || 'claude-opus-5', max_tokens: 4000, fallbacks: 'default',
+    system: AI_SYSTEM,
+    output_config: { effort: 'medium', format: { type: 'json_schema', schema: RECEIPT_SCHEMA } },
+    messages: [{ role: 'user', content }],
+  };
+  const res = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: aiHeaders(), body: JSON.stringify(body) });
+  if (!res.ok) {
+    let msg = 'HTTP ' + res.status;
+    try { const j = await res.json(); msg = j.error?.message || msg; } catch {}
+    throw new Error(msg);
+  }
+  const msg = await res.json();
+  if (msg.stop_reason === 'refusal') throw new Error('AI:n avböjde att läsa bilagan');
+  if (msg.stop_reason === 'max_tokens') throw new Error('AI-svaret blev avklippt');
+  const text = (msg.content || []).filter((b) => b.type === 'text').map((b) => b.text).join('');
+  const parsed = JSON.parse(text);
+  const receipts = (parsed.receipts || []).map((r) => ({
+    page: Math.max(0, (r.page || 1) - 1), date: normDate(r.date), merchant: r.merchant || '',
+    total: r.total_incl_vat == null ? null : round2(r.total_incl_vat), vat: r.vat_amount == null ? null : round2(r.vat_amount),
+    currency: r.currency || 'SEK', description: r.description || r.category || '', category: r.category,
+    confidence: r.confidence >= 0.85 ? 'high' : r.confidence >= 0.5 ? 'medium' : 'low', notes: r.notes,
+  }));
+  return { source: 'ai', receipts, model: msg.model, usage: msg.usage };
+}
+function normDate(s) {
+  if (!s) return ''; const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(s)); return m ? `${m[1]}-${m[2]}-${m[3]}` : '';
+}
+async function testApiKey() {
+  const st = $('keyStatus'); st.textContent = 'Testar…';
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/models?limit=1', { headers: aiHeaders() });
+    if (res.ok) { st.textContent = '✅ Nyckeln fungerar'; }
+    else { const j = await res.json().catch(() => ({})); st.textContent = '❌ ' + (j.error?.message || ('HTTP ' + res.status)); }
+  } catch (e) { st.textContent = '❌ ' + e.message; }
+}
+
+// ---------- Lokal läsning (textlager / Tesseract + regler) ----------
+let tessWorker = null;
+async function getTess(onProgress) {
+  if (tessWorker) return tessWorker;
+  if (!window.Tesseract) await loadScript(BASE + 'vendor/tesseract/tesseract.min.js');
+  const base = BASE + 'vendor/tesseract/';
+  tessWorker = await window.Tesseract.createWorker('swe', 1, {
+    workerPath: base + 'worker.min.js',
+    corePath: base + 'tesseract-core-simd-lstm.wasm.js',
+    langPath: base + 'lang', gzip: true,
+    logger: (m) => onProgress && onProgress(m),
+  });
+  return tessWorker;
+}
+async function ocrPage(pg, onProgress) {
+  const worker = await getTess(onProgress);
+  const url = URL.createObjectURL(pg.jpeg);
+  try {
+    const { data } = await worker.recognize(url, {}, { text: true, blocks: true });
+    const lines = [], words = [];
+    for (const b of data.blocks || []) for (const p of b.paragraphs || []) for (const l of p.lines || []) {
+      const t = (l.text || '').trim(); if (t) lines.push({ text: t, x0: l.bbox.x0, x1: l.bbox.x1, y: l.bbox.y0 });
+      for (const w of l.words || []) {
+        const wt = (w.text || '').trim();
+        if (wt) words.push({ text: wt, x0: w.bbox.x0, x1: w.bbox.x1, y0: w.bbox.y0, y1: w.bbox.y1, conf: w.confidence });
+      }
+    }
+    return { text: data.text || lines.map((l) => l.text).join('\n'), lines, words };
+  } finally { URL.revokeObjectURL(url); }
+}
+async function localExtract(att, onProgress) {
+  const receipts = []; let rawText = '';
+  for (let i = 0; i < att.pages.length; i++) {
+    const pg = att.pages[i];
+    let text = pg.text || '', lines = pg.lines || [], words = null;
+    if (text.replace(/\s/g, '').length < 40) {
+      const r = await ocrPage(pg, onProgress); text = r.text; lines = r.lines; words = r.words;
+      pg.ocrText = text; pg.ocrLines = lines; pg.ocrWords = words;
+    }
+    rawText += text + '\n';
+    for (const rc of parsePageReceipts(text, lines, pg.width, words)) receipts.push({ ...rc, page: i });
+  }
+  return { source: 'local', receipts, rawText };
+}
+// En sida kan innehålla flera kvitton sida vid sida (t.ex. en skanning av tre papperskvitton).
+// Sidan delas i kolumner; delningen används bara om minst två kolumner ser ut som egna kvitton.
+const looksLikeReceipt = (r) => r.total != null && r.vat != null && !!r.date && r.hasTotalKeyword;
+function parsePageReceipts(text, lines, pageWidth, words) {
+  const whole = parseReceiptText(text);
+  let colTexts = [];
+  if (words && words.length >= 20 && pageWidth) colTexts = splitColumnsByWords(words, pageWidth);
+  else if (lines && lines.length >= 6 && pageWidth) colTexts = clusterColumns(lines, pageWidth);
+  if (colTexts.length >= 2) {
+    const parsed = colTexts.map((c) => parseReceiptText(c)).filter(looksLikeReceipt);
+    if (parsed.length >= 2) return parsed;
+  }
+  return (whole.total != null || whole.date) ? [whole] : [];
+}
+// Hittar lodräta "tomma" band i ordens x-utbredning och delar sidan där.
+function splitColumnsByWords(words, pageWidth) {
+  const N = 240, bw = pageWidth / N, bins = new Array(N).fill(0);
+  const solid = words.filter((w) => /[\p{L}\p{N}]{2,}/u.test(w.text) && (w.conf == null || w.conf >= 40));
+  for (const w of solid) {
+    const a = Math.max(0, Math.floor(w.x0 / bw)), b = Math.min(N - 1, Math.floor(w.x1 / bw));
+    for (let i = a; i <= b; i++) bins[i]++;
+  }
+  const ranges = []; let start = null;
+  for (let i = 0; i <= N; i++) {
+    const filled = i < N && bins[i] > 0;
+    if (filled && start === null) start = i;
+    if (!filled && start !== null) { ranges.push([start, i - 1]); start = null; }
+  }
+  const minGap = Math.max(3, Math.round(N * 0.015)); const merged = [];
+  for (const r of ranges) { const last = merged[merged.length - 1]; if (last && r[0] - last[1] - 1 < minGap) last[1] = r[1]; else merged.push([...r]); }
+  const cols = merged.map(([a, b]) => ({ x0: a * bw, x1: (b + 1) * bw, words: [] })).filter((c) => c.x1 - c.x0 > pageWidth * 0.08);
+  if (cols.length < 2) return [];
+  for (const w of words) {
+    const cx = (w.x0 + w.x1) / 2;
+    let col = cols.find((c) => cx >= c.x0 && cx <= c.x1);
+    if (!col) col = cols.reduce((best, c) => (Math.min(Math.abs(cx - c.x0), Math.abs(cx - c.x1)) < Math.min(Math.abs(cx - best.x0), Math.abs(cx - best.x1)) ? c : best));
+    col.words.push(w);
+  }
+  return cols.map((c) => wordsToText(c.words)).filter((t) => t.trim());
+}
+function wordsToText(words) {
+  const ws = [...words].sort((a, b) => ((a.y0 + a.y1) / 2) - ((b.y0 + b.y1) / 2)); const lines = [];
+  for (const w of ws) {
+    const yc = (w.y0 + w.y1) / 2, h = Math.max(6, w.y1 - w.y0); const last = lines[lines.length - 1];
+    if (last && Math.abs(last.yc - yc) < h * 0.6) { last.words.push(w); last.yc = (last.yc * (last.words.length - 1) + yc) / last.words.length; }
+    else lines.push({ yc, words: [w] });
+  }
+  return lines.map((l) => l.words.sort((a, b) => a.x0 - b.x0).map((w) => w.text).join(' ')).join('\n');
+}
+function clusterColumns(lines, pageWidth) {
+  const tol = pageWidth * 0.03; const cols = [];
+  for (const l of [...lines].sort((a, b) => a.x0 - b.x0)) {
+    const cx = (l.x0 + l.x1) / 2;
+    let col = cols.find((c) => cx >= c.x0 - tol && cx <= c.x1 + tol);
+    if (col) { col.lines.push(l); col.x0 = Math.min(col.x0, l.x0); col.x1 = Math.max(col.x1, l.x1); }
+    else cols.push({ x0: l.x0, x1: l.x1, lines: [l] });
+  }
+  // Slå ihop kolumner som överlappar tydligt
+  cols.sort((a, b) => a.x0 - b.x0);
+  const merged = [];
+  for (const c of cols) {
+    const last = merged[merged.length - 1];
+    if (last && c.x0 < last.x1 - tol) { last.lines.push(...c.lines); last.x1 = Math.max(last.x1, c.x1); }
+    else merged.push(c);
+  }
+  return merged.filter((c) => c.lines.length >= 3).map((c) => c.lines.sort((a, b) => a.y - b.y).map((l) => l.text).join('\n'));
+}
+
+const AMOUNT_RE = /(?<![\d,.])(\d{1,3}(?:[  .]\d{3})+|\d+)[,.](\d{2})(?![\d%])/g;
+function amountsIn(line) {
+  const out = []; let m; AMOUNT_RE.lastIndex = 0;
+  while ((m = AMOUNT_RE.exec(line))) out.push(parseFloat(m[1].replace(/[  .]/g, '') + '.' + m[2]));
+  return out;
+}
+const TOTAL_KW = /\b(totalt|total|summa|att betala|belopp|debiteras|köp|kop|betalt|betalat|amount due|amount)\b/i;
+const TOTAL_EXCL = /(netto|exkl|varav|åter|retur|växel|erhållet|emottaget|mottaget|kontant|tips|dricks|rabatt|saldo|kredit)/i;
+// Poängsätter alla belopp: belopp på en "Totalt"-rad, belopp som upprepas (t.ex. i
+// kortbetalningen) och det största beloppet får plus; netto-/momsrader får minus.
+function findTotal(lines) {
+  const score = new Map(), kwAmounts = new Set(); let maxA = null;
+  const add = (a, s) => score.set(a, (score.get(a) || 0) + s);
+  for (const l of lines) {
+    const am = amountsIn(l); if (!am.length) continue;
+    const vatLine = /moms|vat|mva/i.test(l) && !/inkl/i.test(l);
+    const excl = TOTAL_EXCL.test(l) || vatLine;
+    const kw = TOTAL_KW.test(l) && !excl;
+    const lineMax = Math.max(...am);
+    for (const a of am) {
+      add(a, 1);
+      if (kw && a === lineMax) { add(a, 3); kwAmounts.add(a); }
+      if (excl || (/%/.test(l) && !kw)) add(a, -2);
+      if (maxA === null || a > maxA) maxA = a;
+    }
+  }
+  if (!score.size) return { total: null, source: null };
+  let best = null, bestScore = -Infinity;
+  for (const [a, s0] of score) {
+    // Ett belopp vars moms stämmer med 25/12/6 % är med stor sannolikhet totalen
+    const s = s0 + (a === maxA ? 2 : 0) + (findVat(lines, a) ? 3 : 0);
+    if (s > bestScore || (s === bestScore && a > best)) { best = a; bestScore = s; }
+  }
+  return { total: best, source: kwAmounts.has(best) ? 'keyword' : 'max' };
+}
+function findVat(lines, total) {
+  if (total == null) return null;
+  const rates = [0.25, 0.12, 0.06]; let best = null;
+  lines.forEach((l) => {
+    const isVatLine = /(moms|vat|mva)/i.test(l) && !/(reg|nummer|nr\b|number|\bid\b|SE\d{6})/i.test(l);
+    for (const a of amountsIn(l)) {
+      if (a <= 0 || a >= total) continue;
+      rates.forEach((r) => {
+        const exp = total * r / (1 + r); const tol = Math.max(0.06, exp * 0.02); const err = Math.abs(a - exp);
+        if (err <= tol) { const score = (isVatLine ? 2 : 0) + (1 - err / tol); if (!best || score > best.score) best = { vat: a, rate: r, score }; }
+      });
+    }
+  });
+  return best;
+}
+const DATE_RES = [
+  { re: /\b(20\d{2})[-./](\d{1,2})[-./](\d{1,2})\b/g, f: (m) => [m[1], m[2], m[3]] },
+  { re: /\b(20\d{2})(\d{2})(\d{2})\b/g, f: (m) => [m[1], m[2], m[3]] },
+  { re: /\b(\d{1,2})[./-](\d{1,2})[./-](20\d{2})\b/g, f: (m) => [m[3], m[2], m[1]] },
+  { re: /\b(\d{1,2})\/(\d{1,2})\/(\d{2})\b/g, f: (m) => { let a = +m[1], b = +m[2]; if (a > 12 && b <= 12) [a, b] = [b, a]; return ['20' + m[3], a, b]; } },
+  { re: /\b(\d{1,2})[.](\d{1,2})[.](\d{2})\b/g, f: (m) => ['20' + m[3], m[2], m[1]] },
+];
+function findDate(lines) {
+  const counts = new Map(); let first = null;
+  lines.forEach((l, li) => {
+    for (const { re, f } of DATE_RES) {
+      re.lastIndex = 0; let m;
+      while ((m = re.exec(l))) {
+        const [y, mo, d] = f(m).map(Number);
+        if (y < 2000 || y > 2099 || mo < 1 || mo > 12 || d < 1 || d > 31) continue;
+        const iso = `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        const c = counts.get(iso) || { n: 0, li }; c.n++; counts.set(iso, c); if (!first) first = iso;
+      }
+    }
+  });
+  if (!counts.size) return '';
+  return [...counts.entries()].sort((a, b) => (b[1].n - a[1].n) || (a[1].li - b[1].li))[0][0];
+}
+const CATEGORY_RULES = [
+  { cat: 'Laddning', desc: 'Laddning bil', re: /\bkwh\b|laddning|laddplats|laddstation|laddbox|charging|charge|virta|ionity|recharge|incharge|plugsurfing|elbil|supercharger/i },
+  { cat: 'Parkering', desc: 'Parkering', re: /parkering|parking|p-avgift|p-hus|garage|easypark|aimo|apcoa|q-park|parkster|smspark|mobilpark/i },
+  { cat: 'Drivmedel', desc: 'Drivmedel', re: /circle k|\bst1\b|okq8|preem|\bingo\b|shell|qstar|tanka|bensin|diesel|blyfri|\bliter\b|sek\/l\b|drivmedel|pump/i },
+  { cat: 'Hotell', desc: 'Hotell', re: /hotell|hotel|\blogi\b|scandic|best western|clarion|comfort|quality hotel|elite|\brum\b|\broom\b|övernattning/i },
+  { cat: 'Resa', desc: 'Resa', re: /\bsj\b|tåg|taxi|\bbuss\b|västtrafik|skånetrafiken|\bsl\b|flyg|\bsas\b|norwegian|biljett|färja|vägtull|trängselskatt|broavgift|öresundsbron/i },
+  { cat: 'Kontorsmateriel', desc: 'Kontorsmateriel', re: /clas ohlson|kontor|papper|penna|pennor|toner|bläck|kjell|elgiganten|staples|office|lyreco|jula|biltema|bauhaus|byggmax|verktyg/i },
+  { cat: 'Måltid', desc: 'Måltid', re: /restaurang|restaurant|lunch|middag|frukost|café|cafe|kaffe|espresso|pizza|burger|mcdonald|\bmax\b|sushi|kebab|pressbyrån|7-eleven|\bica\b|\bcoop\b|willys|hemköp/i },
+];
+function findCategory(text) {
+  for (const r of CATEGORY_RULES) if (r.re.test(text)) return { category: r.cat, description: r.desc };
+  return { category: 'Övrigt', description: '' };
+}
+function findMerchant(lines) {
+  for (const l of lines.slice(0, 8)) {
+    const t = l.replace(/[^\p{L}\p{N} &.'-]/gu, '').trim();
+    if (/[a-zåäö]{3,}/i.test(t) && !/kvitto|receipt|betald|betalning|datum|nummer|transaktion|välkommen|tack|org\.?nr|moms/i.test(t) && t.length <= 40) return t;
+  }
+  return '';
+}
+function parseReceiptText(text) {
+  const lines = String(text || '').split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  const { total, source } = findTotal(lines);
+  const vat = findVat(lines, total);
+  const date = findDate(lines);
+  const { category, description } = findCategory(lines.join('\n'));
+  const merchant = findMerchant(lines);
+  const confidence = (source === 'keyword' && vat && date) ? 'high' : (total != null ? 'medium' : 'low');
+  const hasTotalKeyword = lines.some((l) => TOTAL_KW.test(l));
+  return { date, total: total == null ? null : round2(total), totalSource: source, hasTotalKeyword, vat: vat ? round2(vat.vat) : null, vatRate: vat?.rate ?? null, category, description: description || category, merchant, confidence, currency: 'SEK' };
+}
+
+// ---------- Rader ----------
+function addRow(partial = {}) {
+  const row = {
+    id: uid(), date: '', attachmentId: null, page: 0, total: null, vat: null, rate: null, localAmount: null,
+    description: '', account: settings.account || '', kst: settings.kst || '', project: settings.project || '',
+    auto: false, confidence: 'high', ...partial,
+  };
+  current.rows.push(row);
+  return row;
+}
+function renderRows() {
+  const el = $('rowList');
+  if (!current.rows.length) { el.innerHTML = '<div class="empty">Inga rader ännu.</div>'; return; }
+  el.innerHTML = current.rows.map((r, i) => {
+    const att = attachments.find((a) => a.id === r.attachmentId);
+    const badge = r.auto ? (r.confidence === 'high' ? '<span class="badge ok">Auto</span>' : '<span class="badge warn">Kontrollera</span>') : '';
+    return `<div class="row-card ${r.auto && r.confidence !== 'high' ? 'auto' : ''}" data-row="${r.id}">
+      <div class="rh"><span class="num">${i + 1}</span>
+        ${att ? `<span class="small muted">${esc(att.name)}${(att.pages?.length || 0) > 1 ? ' · sida ' + ((r.page || 0) + 1) : ''}</span>` : '<span class="small muted">Utan kvitto</span>'}
+        ${badge}<span class="sp"></span>
+        <button class="btn small" data-act="up" title="Flytta upp" ${i === 0 ? 'disabled' : ''}>▲</button>
+        <button class="btn small" data-act="down" title="Flytta ner" ${i === current.rows.length - 1 ? 'disabled' : ''}>▼</button>
+        <button class="btn small danger" data-act="del">Ta bort</button></div>
+      <div class="rgrid">
+        <div class="field"><label>Datum</label><input type="date" data-f="date" value="${esc(r.date)}"></div>
+        <div class="field"><label>Totalbelopp SEK</label><input class="amount" inputmode="decimal" data-f="total" value="${fmtInput(r.total)}"></div>
+        <div class="field"><label>Varav moms</label><input class="amount" inputmode="decimal" data-f="vat" value="${fmtInput(r.vat)}"></div>
+        <div class="field wide"><label>Beskrivning</label><input data-f="description" list="dlDesc" value="${esc(r.description)}"></div>
+        <div class="field"><label>Projekt</label><input data-f="project" value="${esc(r.project)}"></div>
+        <div class="field"><label>Konto</label><input data-f="account" value="${esc(r.account)}"></div>
+        <div class="field"><label>Kst</label><input data-f="kst" value="${esc(r.kst)}"></div>
+        <div class="field"><label>Valutakurs</label><input class="amount" inputmode="decimal" data-f="rate" value="${r.rate == null ? '' : String(r.rate).replace('.', ',')}"></div>
+        <div class="field"><label>Belopp lokal valuta</label><input class="amount" inputmode="decimal" data-f="localAmount" value="${fmtInput(r.localAmount)}"></div>
+        <div class="field"><label>Kvitto</label><select data-f="attachmentId"><option value="">–</option>${attachments.map((a) => `<option value="${a.id}" ${a.id === r.attachmentId ? 'selected' : ''}>${esc(a.name)}</option>`).join('')}</select></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+$('rowList').addEventListener('input', (e) => {
+  const inp = e.target; const card = inp.closest('[data-row]'); if (!card) return;
+  const row = current.rows.find((r) => r.id === card.dataset.row); const f = inp.dataset.f; if (!row || !f) return;
+  if (['total', 'vat', 'localAmount', 'rate'].includes(f)) row[f] = parseNum(inp.value);
+  else row[f] = inp.value;
+  if (f === 'total' && (row.localAmount == null || row.localAmount === row._prevTotal)) row.localAmount = row.total;
+  row._prevTotal = row.total;
+  if (f === 'attachmentId') row.page = 0;
+  row.auto = false;
+  card.classList.remove('auto');
+  const b = card.querySelector('.badge'); if (b) b.remove();
+  renderSums(); saveReport();
+});
+$('rowList').addEventListener('change', (e) => {
+  const inp = e.target; if (!inp.classList.contains('amount')) return;
+  const card = inp.closest('[data-row]'); const row = current.rows.find((r) => r.id === card.dataset.row); const f = inp.dataset.f;
+  if (f === 'rate') { inp.value = row.rate == null ? '' : String(row.rate).replace('.', ','); }
+  else { inp.value = fmtInput(row[f]); }
+  if (f === 'attachmentId') renderAttachments();
+});
+$('rowList').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-act]'); if (!b) return;
+  const card = b.closest('[data-row]'); const i = current.rows.findIndex((r) => r.id === card.dataset.row); if (i < 0) return;
+  if (b.dataset.act === 'del') { if (!confirm('Ta bort raden?')) return; current.rows.splice(i, 1); }
+  else if (b.dataset.act === 'up' && i > 0) { [current.rows[i - 1], current.rows[i]] = [current.rows[i], current.rows[i - 1]]; }
+  else if (b.dataset.act === 'down' && i < current.rows.length - 1) { [current.rows[i + 1], current.rows[i]] = [current.rows[i], current.rows[i + 1]]; }
+  saveReport(); renderReport();
+});
+$('btnAddRow').onclick = () => { addRow({ date: todayISO() }); saveReport(); renderReport(); };
+
+// ---------- PDF ----------
+const A3 = [841.89, 1190.55];
+const COLW = [13.14, 11.43, 18.71, 14.43, 11.14, 11.14, 8.71, 9.14, 16, 7.14, 5.14, 10.57, 11.71]; // Excel-kolumnbredder A–M
+const COLSUM = COLW.reduce((a, b) => a + b, 0);
+const FORM_W = 510, S = 0.6;
+const safeText = (t) => String(t ?? '').replace(/[–—]/g, '-').replace(/[^\x20-\x7E\xA0-\xFF‘’“”•€…]/g, '?');
+
+function formHeight(nRows) {
+  return 26 + (26.25 + 17.25 + 18 + 30.75 + 18 + 30.75 + 13.5 + 18 + 51) * S + nRows * 34.5 * S + (29.25 + 27.75 + 15.75 + 9 + 30) * S;
+}
+function attachmentItems() {
+  const order = [...attachments].map((a) => ({ a, min: Math.min(...bilagaNumbersFor(a).concat([Infinity])) }))
+    .sort((x, y) => (x.min - y.min) || (x.a.order - y.a.order)).map((x) => x.a);
+  const items = [];
+  for (const att of order) {
+    const n = Math.max(1, att.pages.length);
+    for (let p = 0; p < n; p++) items.push({ att, pageIndex: p, label: labelForNums(bilagaNumbersFor(att, p)) });
+  }
+  return items;
+}
+async function embedItem(doc, it) {
+  const { att, pageIndex } = it; const pg = att.pages[pageIndex];
+  if (att.mime === 'application/pdf' && !(pg && pg.rotate % 360)) {
+    try {
+      const bytes = new Uint8Array(await att.blob.arrayBuffer());
+      const [emb] = await doc.embedPdf(bytes, [pageIndex]);
+      return { draw: (page, o) => page.drawPage(emb, o), w: emb.width, h: emb.height };
+    } catch (e) { console.warn('embedPdf misslyckades, använder bild', e); }
+  }
+  if (!pg) throw new Error('Bilagan ' + att.name + ' är inte inläst ännu');
+  const jpg = await doc.embedJpg(new Uint8Array(await pg.jpeg.arrayBuffer()));
+  return { draw: (page, o) => page.drawImage(jpg, o), w: jpg.width, h: jpg.height };
+}
+async function buildPdf() {
+  const { PDFDocument, StandardFonts, rgb } = window.PDFLib;
+  const doc = await PDFDocument.create();
+  doc.setTitle(`Utläggsredovisning ${current.title || ''}`.trim()); doc.setAuthor(current.name || ''); doc.setProducer('Utläggsappen');
+  const font = await doc.embedFont(StandardFonts.Helvetica);
+  const bold = await doc.embedFont(StandardFonts.HelveticaBold);
+  const logo = await doc.embedPng(await (await fetch(BASE + 'assets/logo.png')).arrayBuffer());
+  let sig = null;
+  if (settings.signature) { try { sig = await doc.embedPng(dataUrlToBytes(settings.signature)); } catch (e) { console.warn(e); } }
+  const items = attachmentItems();
+  for (const it of items) it.emb = await embedItem(doc, it);
+
+  const [PW, PH] = A3;
+  const nRows = Math.max(15, current.rows.length);
+  const FH = formHeight(nRows);
+  const page1 = doc.addPage([PW, PH]);
+  const res = { font, bold, logo, sig, rgb, PH };
+  const gridTop = 30, gridBottom = PH - FH - 36;
+  const first = items.length <= 2 ? Math.min(items.length, 2) : Math.min(items.length, 4);
+  drawGrid(page1, items.slice(0, first), { x: 30, top: gridTop, w: PW - 60, h: gridBottom - gridTop, cols: 2, rows: items.length <= 2 ? 1 : 2 }, res);
+  drawForm(page1, PH - FH - 22, res, nRows);
+  for (let i = first; i < items.length; i += 4) {
+    const p = doc.addPage([PW, PH]);
+    drawGrid(p, items.slice(i, i + 4), { x: 30, top: 30, w: PW - 60, h: PH - 60, cols: 2, rows: 2 }, res);
+  }
+  return doc.save();
+}
+function drawGrid(page, items, g, res) {
+  if (!items.length) return;
+  const { rgb, PH, bold } = res; const gap = 14, pad = 8;
+  const cw = (g.w - gap * (g.cols - 1)) / g.cols, ch = (g.h - gap * (g.rows - 1)) / g.rows;
+  items.forEach((it, i) => {
+    const col = i % g.cols, row = Math.floor(i / g.cols);
+    const cx = g.x + col * (cw + gap), ctop = g.top + row * (ch + gap);
+    const sc = Math.min((cw - 2 * pad) / it.emb.w, (ch - 2 * pad) / it.emb.h);
+    const dw = it.emb.w * sc, dh = it.emb.h * sc;
+    const x = cx + (cw - dw) / 2, top = ctop + pad;
+    const y = PH - top - dh;
+    page.drawRectangle({ x: x - 1, y: y - 1, width: dw + 2, height: dh + 2, borderColor: rgb(0.8, 0.8, 0.8), borderWidth: 0.5, color: rgb(1, 1, 1) });
+    it.emb.draw(page, { x, y, width: dw, height: dh });
+    if (it.label) {
+      const blue = rgb(0.1, 0.29, 0.85); const r = it.label.length > 2 ? 12 : 9.5;
+      const lx = x + 12, ly = PH - (top + 12);
+      page.drawCircle({ x: lx, y: ly, size: r, borderColor: blue, borderWidth: 1.4, color: rgb(1, 1, 1) });
+      const fs = it.label.length > 2 ? 8 : 10; const tw = bold.widthOfTextAtSize(it.label, fs);
+      page.drawText(it.label, { x: lx - tw / 2, y: ly - fs * 0.36, size: fs, font: bold, color: blue });
+    }
+  });
+}
+function drawForm(page, top, res, nRows) {
+  const { font, bold, logo, sig, rgb, PH } = res;
+  const black = rgb(0, 0, 0), grey = rgb(0.851, 0.851, 0.851), red = rgb(1, 0, 0);
+  const x0 = (A3[0] - FORM_W) / 2;
+  const cw = COLW.map((c) => c / COLSUM * FORM_W);
+  const colX = []; let acc = x0; for (const w of cw) { colX.push(acc); acc += w; }
+  const spanW = (a, b) => colX[b] + cw[b] - colX[a];
+  const text = (f, size, x, baselineTop, s, color = black) => page.drawText(safeText(s), { x, y: PH - baselineTop, size, font: f, color });
+  const wrap = (s, f, size, maxW) => {
+    const words = safeText(s).split(/\s+/).filter(Boolean); const out = []; let cur = '';
+    for (const w of words) { const t = cur ? cur + ' ' + w : w; if (f.widthOfTextAtSize(t, size) <= maxW || !cur) cur = t; else { out.push(cur); cur = w; } }
+    if (cur) out.push(cur); return out;
+  };
+  // Ritar en cell med ram, ev. fyllning och text (align: left|center|right, wrap)
+  const cell = (x, y, w, h, o = {}) => {
+    page.drawRectangle({ x, y: PH - y - h, width: w, height: h, borderColor: black, borderWidth: 0.5, ...(o.fill ? { color: o.fill } : {}) });
+    if (o.text === undefined || o.text === null || o.text === '') return;
+    const f = o.bold ? bold : font; let size = o.size || 7.2; const pad = 2;
+    let lines = o.wrap ? wrap(o.text, f, size, w - 2 * pad) : [safeText(o.text)];
+    while (o.wrap && lines.length * size * 1.15 > h - 1 && size > 4.5) { size -= 0.5; lines = wrap(o.text, f, size, w - 2 * pad); }
+    if (!o.wrap) { while (f.widthOfTextAtSize(lines[0], size) > w - 2 * pad && size > 4.5) size -= 0.5; }
+    const lh = size * 1.15, totalH = lines.length * lh;
+    lines.forEach((ln, k) => {
+      const tw = f.widthOfTextAtSize(ln, size);
+      const tx = o.align === 'center' ? x + (w - tw) / 2 : o.align === 'right' ? x + w - pad - tw : x + pad;
+      const cy = y + (h - totalH) / 2 + (k + 0.5) * lh;
+      text(f, size, tx, cy + size * 0.36, ln, o.color);
+    });
+  };
+  const line = (x1, x2, y) => page.drawLine({ start: { x: x1, y: PH - y }, end: { x: x2, y: PH - y }, thickness: 0.6, color: black });
+
+  let y = top;
+  // Sidhuvud som i Excel-mallen: logga + företagsnamn
+  page.drawImage(logo, { x: x0, y: PH - y - 12.15, width: 61.65, height: 12.15 });
+  y += 14; text(bold, 6.6, x0, y + 6.6 * 0.8, settings.company || 'Midroc Mechanical AB'); y += 12;
+  // Rad 1: titel
+  let h = 26.25 * S; text(bold, 12, x0, y + h / 2 + 12 * 0.36, 'UTLÄGGSREDOVISNING'); y += h;
+  y += 17.25 * S;
+  // Rad 3–6: namn / anställningsnummer / syfte / resmål
+  h = 18 * S; cell(x0, y, spanW(0, 6), h, { fill: grey, text: 'Namn', size: 6 }); cell(colX[7], y, spanW(7, 12), h, { fill: grey, text: 'Anställningsnummer', size: 6 }); y += h;
+  h = 30.75 * S; cell(x0, y, spanW(0, 6), h, { text: current.name, size: 8.4 }); cell(colX[7], y, spanW(7, 12), h, { text: current.employeeNo, size: 8.4 }); y += h;
+  h = 18 * S; cell(x0, y, spanW(0, 6), h, { fill: grey, text: 'Syfte', size: 6 }); cell(colX[7], y, spanW(7, 12), h, { fill: grey, text: 'Ev Resmål', size: 6 }); y += h;
+  h = 30.75 * S; cell(x0, y, spanW(0, 6), h, { text: current.purpose, size: 8.4 }); cell(colX[7], y, spanW(7, 12), h, { text: current.destination, size: 8.4 }); y += h;
+  y += 13.5 * S;
+  h = 18 * S; text(bold, 7.2, x0, y + h / 2 + 7.2 * 0.36, 'UTLÄGG'); y += h;
+  // Rad 9: kolumnrubriker
+  const COLS = [
+    { c: 0, t: 'Datum' }, { c: 1, t: 'Bilaga Nr' }, { c: 2, t: 'Totalbelopp i SEK', color: red }, { c: 3, t: 'Varav Momsbelopp (vid kvitto i SEK)', color: red },
+    { c: 4, t: 'Valutakurs' }, { c: 5, t: 'Belopp i lokal valuta', color: red }, { c: 6, to: 8, t: 'Beskrivning' }, { c: 9, to: 10, t: 'Konto', size: 4.8 },
+    { c: 11, t: 'Kst' }, { c: 12, t: 'Projekt' },
+  ];
+  h = 51 * S;
+  for (const k of COLS) cell(colX[k.c], y, spanW(k.c, k.to ?? k.c), h, { text: k.t, size: k.size || 6, bold: true, align: 'center', wrap: true, color: k.color });
+  y += h;
+  // Datarader
+  h = 34.5 * S;
+  for (let i = 0; i < nRows; i++) {
+    const r = current.rows[i];
+    const vals = [
+      { c: 0, t: r ? r.date : '', align: 'center' }, { c: 1, t: r ? String(i + 1) : '', align: 'center' },
+      { c: 2, t: r ? fmtAmount(r.total) : '', align: 'center' }, { c: 3, t: r ? fmtAmount(r.vat) : '', align: 'center' },
+      { c: 4, t: r && r.rate != null ? Number(r.rate).toFixed(4).replace('.', ',') : '', align: 'center' },
+      { c: 5, t: r ? fmtAmount(r.localAmount ?? r.total) : '', align: 'center' },
+      { c: 6, to: 8, t: r ? r.description : '', wrap: true }, { c: 9, to: 10, t: r ? r.account : '' },
+      { c: 11, t: r ? r.kst : '', align: 'center' }, { c: 12, t: r ? r.project : '', align: 'center' },
+    ];
+    for (const v of vals) cell(colX[v.c], y, spanW(v.c, v.to ?? v.c), h, { text: v.t, size: 7.2, align: v.align, wrap: v.wrap });
+    y += h;
+  }
+  // Rad 25: summor
+  const tot = reportTotals(current);
+  h = 29.25 * S;
+  cell(x0, y, spanW(0, 1), h, { text: 'Totalt belopp att utbetala', size: 6, bold: true, align: 'center' });
+  cell(colX[2], y, cw[2], h, { text: fmtAmount(tot.total) + ' kr', size: 7.2, bold: true, align: 'center' });
+  cell(colX[3], y, cw[3], h, { text: fmtAmount(tot.vat), size: 7.2, align: 'center' });
+  cell(colX[4], y, cw[4], h, { text: 'sek', size: 7.2, align: 'center' });
+  y += h;
+  const sigTop = y + 2;
+  y += 27.75 * S;
+  // Rad 27: Sign / Attest
+  h = 15.75 * S;
+  text(font, 7.2, colX[1] + 1, y + h / 2 + 7.2 * 0.36, 'Sign'); line(colX[1], colX[3] + cw[3], y + h);
+  text(font, 7.2, colX[6] + 1, y + h / 2 + 7.2 * 0.36, 'Attest.'); line(colX[6], colX[9] + cw[9], y + h);
+  if (sig) {
+    const maxH = y + h - 1 - sigTop, maxW = spanW(1, 3) - 24;
+    const sc = Math.min(maxW / sig.width, maxH / sig.height);
+    const dw = sig.width * sc, dh = sig.height * sc;
+    page.drawImage(sig, { x: colX[1] + 22, y: PH - (y + h - 1), width: dw, height: dh });
+  }
+  y += h; y += 9 * S;
+  // Rad 29: Datum
+  h = 30 * S;
+  text(font, 7.2, colX[1] + 1, y + h / 2 + 7.2 * 0.36, 'Datum:'); line(colX[1], colX[3] + cw[3], y + h);
+  text(font, 7.2, colX[6] + 1, y + h / 2 + 7.2 * 0.36, 'Datum:'); line(colX[6], colX[9] + cw[9], y + h);
+  if (sig) text(font, 7.2, colX[2] + 2, y + h / 2 + 7.2 * 0.36, todayISO());
+}
+
+async function generatePdf() {
+  if (!current) return;
+  if (attachments.some((a) => a.status === 'processing' || a.status === 'pending')) { toast('Vänta tills alla kvitton är avlästa', 'bad'); return; }
+  const btn = $('btnPdf'); btn.disabled = true; btn.textContent = 'Skapar PDF…';
+  try {
+    const bytes = await buildPdf();
+    const blob = new Blob([bytes], { type: 'application/pdf' });
+    const name = `Utlägg ${safeFileName(current.title)}.pdf`;
+    if (lastPdf?.url) URL.revokeObjectURL(lastPdf.url);
+    lastPdf = { blob, name, url: URL.createObjectURL(blob) };
+    $('pdfFrame').src = lastPdf.url;
+    $('previewInfo').textContent = `${name} · ${(blob.size / 1024).toFixed(0)} kB`;
+    const file = new File([blob], name, { type: 'application/pdf' });
+    $('btnShare').hidden = !(navigator.canShare && navigator.canShare({ files: [file] }));
+    screenStack.push(['scrReport', current.title]);
+    showScreen('scrPreview', 'Färdig PDF');
+  } catch (e) { console.error(e); toast('Kunde inte skapa PDF: ' + e.message, 'bad'); }
+  finally { btn.disabled = false; btn.textContent = '📄 Skapa PDF'; }
+}
+$('btnPdf').onclick = generatePdf;
+$('btnDownload').onclick = () => { if (!lastPdf) return; const a = document.createElement('a'); a.href = lastPdf.url; a.download = lastPdf.name; document.body.appendChild(a); a.click(); a.remove(); };
+$('btnOpen').onclick = () => { if (lastPdf) window.open(lastPdf.url, '_blank'); };
+$('btnShare').onclick = async () => {
+  if (!lastPdf) return;
+  try { await navigator.share({ files: [new File([lastPdf.blob], lastPdf.name, { type: 'application/pdf' })], title: lastPdf.name }); }
+  catch (e) { if (e.name !== 'AbortError') toast('Delning misslyckades: ' + e.message, 'bad'); }
+};
+
+// ---------- Excel-export (patchar mallen) ----------
+const escXml = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' }[c]));
+const colIndex = (col) => col.split('').reduce((n, ch) => n * 26 + (ch.charCodeAt(0) - 64), 0);
+function excelSerial(iso) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || ''); if (!m) return null;
+  return Math.round((Date.UTC(+m[1], +m[2] - 1, +m[3]) - Date.UTC(1899, 11, 30)) / 86400000);
+}
+function setCell(xml, ref, val) { // val: {t:'s', v} | {t:'n', v} | null
+  const m = /^([A-Z]+)(\d+)$/.exec(ref); const col = m[1], rown = m[2];
+  const rowRe = new RegExp(`<row r="${rown}"[^>]*?(?:/>|>[\\s\\S]*?</row>)`);
+  const rm = rowRe.exec(xml); if (!rm) throw new Error('Rad ' + rown + ' saknas i mallen');
+  let rowXml = rm[0];
+  if (rowXml.endsWith('/>')) rowXml = rowXml.slice(0, -2) + '></row>';
+  const cellRe = new RegExp(`<c r="${ref}"(?:[^>]*?/>|[^>]*?>[\\s\\S]*?</c>)`);
+  const cm = cellRe.exec(rowXml);
+  let s = ''; if (cm) { const sm = / s="(\d+)"/.exec(cm[0]); if (sm) s = sm[1]; }
+  const sa = s ? ` s="${s}"` : '';
+  let newCell;
+  if (!val || val.v === null || val.v === undefined || val.v === '') newCell = `<c r="${ref}"${sa}/>`;
+  else if (val.t === 's') newCell = `<c r="${ref}"${sa} t="inlineStr"><is><t xml:space="preserve">${escXml(val.v)}</t></is></c>`;
+  else newCell = `<c r="${ref}"${sa}><v>${val.v}</v></c>`;
+  if (cm) rowXml = rowXml.replace(cm[0], newCell);
+  else {
+    // Sätt in i kolumnordning
+    const cells = [...rowXml.matchAll(/<c r="([A-Z]+)\d+"/g)];
+    const after = cells.find((c) => colIndex(c[1]) > colIndex(col));
+    if (after) rowXml = rowXml.slice(0, after.index) + newCell + rowXml.slice(after.index);
+    else rowXml = rowXml.replace('</row>', newCell + '</row>');
+  }
+  return xml.replace(rm[0], rowXml);
+}
+function setFormulaValue(xml, ref, value) {
+  const re = new RegExp(`(<c r="${ref}"[^>]*>)(<f>[^<]*</f>)(?:<v>[^<]*</v>)?(</c>)`);
+  return xml.replace(re, `$1$2<v>${value}</v>$3`);
+}
+async function buildXlsx() {
+  const buf = await (await fetch(BASE + 'assets/mall.xlsx')).arrayBuffer();
+  const files = window.fflate.unzipSync(new Uint8Array(buf));
+  const dec = new TextDecoder(), enc = new TextEncoder();
+  let xml = dec.decode(files['xl/worksheets/sheet1.xml']);
+  const str = (v) => ({ t: 's', v }), num = (v) => (v === null || v === undefined || v === '' || isNaN(v)) ? null : ({ t: 'n', v: Number(v) });
+  xml = setCell(xml, 'A4', str(current.name)); xml = setCell(xml, 'H4', str(current.employeeNo));
+  xml = setCell(xml, 'A6', str(current.purpose)); xml = setCell(xml, 'H6', str(current.destination));
+  for (let i = 0; i < 15; i++) {
+    const n = 10 + i, r = current.rows[i];
+    xml = setCell(xml, 'A' + n, r && r.date ? num(excelSerial(r.date)) : null);
+    xml = setCell(xml, 'B' + n, r ? num(i + 1) : null);
+    xml = setCell(xml, 'C' + n, r ? num(r.total) : null);
+    xml = setCell(xml, 'D' + n, r ? num(r.vat) : null);
+    xml = setCell(xml, 'E' + n, r ? num(r.rate) : null);
+    xml = setCell(xml, 'F' + n, r ? num(r.localAmount ?? r.total) : null);
+    xml = setCell(xml, 'G' + n, r ? str(r.description) : null);
+    xml = setCell(xml, 'J' + n, r ? str(r.account) : null);
+    xml = setCell(xml, 'L' + n, r ? str(r.kst) : null);
+    xml = setCell(xml, 'M' + n, r ? str(r.project) : null);
+  }
+  const tot = reportTotals(current);
+  xml = setFormulaValue(xml, 'C25', tot.total); xml = setFormulaValue(xml, 'D25', tot.vat);
+  files['xl/worksheets/sheet1.xml'] = enc.encode(xml);
+  // Ta bort beräkningskedjan så Excel räknar om formlerna vid öppning
+  delete files['xl/calcChain.xml'];
+  if (files['xl/_rels/workbook.xml.rels']) files['xl/_rels/workbook.xml.rels'] = enc.encode(dec.decode(files['xl/_rels/workbook.xml.rels']).replace(/<Relationship [^>]*calcChain[^>]*\/>/, ''));
+  if (files['[Content_Types].xml']) files['[Content_Types].xml'] = enc.encode(dec.decode(files['[Content_Types].xml']).replace(/<Override [^>]*calcChain[^>]*\/>/, ''));
+  if (files['xl/workbook.xml']) files['xl/workbook.xml'] = enc.encode(dec.decode(files['xl/workbook.xml']).replace(/<calcPr /, '<calcPr fullCalcOnLoad="1" '));
+  if (current.rows.length > 15) toast('Obs: Excel-mallen har 15 rader – bara de första 15 exporterades', 'bad');
+  return window.fflate.zipSync(files, { level: 6 });
+}
+$('btnXlsx').onclick = async () => {
+  try {
+    const bytes = await buildXlsx();
+    const blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `Utlägg ${safeFileName(current.title)}.xlsx`;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 30000);
+  } catch (e) { console.error(e); toast('Kunde inte skapa Excel: ' + e.message, 'bad'); }
+};
+$('btnDeleteReport').onclick = async () => {
+  if (!confirm(`Ta bort rapporten "${current.title}" med alla kvitton?`)) return;
+  for (const a of attachments) await dbDel('attachments', a.id);
+  await dbDel('reports', current.id);
+  reports = reports.filter((r) => r.id !== current.id); current = null; attachments = [];
+  renderReports(); showScreen('scrReports');
+};
+
+// ---------- Signatur ----------
+const sigCanvas = $('sigCanvas'); let sigDrawing = false, sigHas = false, sigLast = null;
+function sigSetup() {
+  const dpr = window.devicePixelRatio || 1; const rect = sigCanvas.getBoundingClientRect();
+  sigCanvas.width = Math.round(rect.width * dpr); sigCanvas.height = Math.round(rect.height * dpr);
+  const ctx = sigCanvas.getContext('2d'); ctx.scale(dpr, dpr); ctx.lineWidth = 2.2; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = '#102a5c';
+  sigHas = false;
+}
+function sigPos(e) { const r = sigCanvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+sigCanvas.addEventListener('pointerdown', (e) => { sigDrawing = true; sigLast = sigPos(e); sigCanvas.setPointerCapture(e.pointerId); e.preventDefault(); });
+sigCanvas.addEventListener('pointermove', (e) => {
+  if (!sigDrawing) return; const p = sigPos(e); const ctx = sigCanvas.getContext('2d');
+  ctx.beginPath(); ctx.moveTo(sigLast.x, sigLast.y); ctx.lineTo(p.x, p.y); ctx.stroke(); sigLast = p; sigHas = true;
+});
+const sigEnd = () => { sigDrawing = false; };
+sigCanvas.addEventListener('pointerup', sigEnd); sigCanvas.addEventListener('pointercancel', sigEnd);
+$('btnSigReset').onclick = () => sigSetup();
+$('btnSigCancel').onclick = () => $('dlgSign').close();
+$('btnSigDone').onclick = () => {
+  if (!sigHas) { toast('Rita en signatur först', 'bad'); return; }
+  // Beskär till innehållet
+  const ctx = sigCanvas.getContext('2d'); const { width: W, height: H } = sigCanvas;
+  const d = ctx.getImageData(0, 0, W, H).data; let x0 = W, y0 = H, x1 = 0, y1 = 0;
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (d[(y * W + x) * 4 + 3] > 10) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+  const pad = 8; x0 = Math.max(0, x0 - pad); y0 = Math.max(0, y0 - pad); x1 = Math.min(W - 1, x1 + pad); y1 = Math.min(H - 1, y1 + pad);
+  const c = document.createElement('canvas'); c.width = x1 - x0 + 1; c.height = y1 - y0 + 1;
+  c.getContext('2d').drawImage(sigCanvas, x0, y0, c.width, c.height, 0, 0, c.width, c.height);
+  settings.signature = c.toDataURL('image/png'); saveSettings();
+  $('dlgSign').close(); renderSettings(); if (current) renderSignHint(); toast('Signatur sparad', 'ok');
+};
+function openSigDialog() { $('dlgSign').showModal(); requestAnimationFrame(sigSetup); }
+$('btnSigDraw').onclick = openSigDialog;
+$('btnSign').onclick = openSigDialog;
+$('btnSigClear').onclick = () => { settings.signature = ''; saveSettings(); renderSettings(); if (current) renderSignHint(); };
+
+// ---------- Inställningar ----------
+function renderSettings() {
+  document.querySelectorAll('[data-s]').forEach((inp) => { inp.value = settings[inp.dataset.s] || ''; });
+  $('sigBox').innerHTML = settings.signature ? `<img class="sigprev" src="${settings.signature}" alt="Signatur">` : '<span class="small muted">Ingen signatur sparad.</span>';
+  $('keyStatus').textContent = settings.apiKey ? 'Nyckel sparad' : '';
+}
+document.querySelectorAll('[data-s]').forEach((inp) => inp.addEventListener('input', () => {
+  settings[inp.dataset.s] = inp.value.trim(); saveSettings(); if (inp.dataset.s === 'apiKey') $('keyStatus').textContent = '';
+}));
+$('btnTestKey').onclick = testApiKey;
+$('btnOcrDl').onclick = async () => {
+  const st = $('ocrStatus'); st.textContent = 'Hämtar…';
+  try {
+    const base = BASE + 'vendor/tesseract/';
+    for (const f of ['tesseract.min.js', 'worker.min.js', 'tesseract-core-simd-lstm.wasm.js', 'lang/swe.traineddata.gz']) {
+      const r = await fetch(base + f); if (!r.ok) throw new Error(f); await r.arrayBuffer();
+    }
+    st.textContent = '✅ OCR-filerna är hämtade' + (navigator.serviceWorker?.controller ? ' och sparade offline' : '');
+  } catch (e) { st.textContent = '❌ Kunde inte hämta ' + e.message; }
+};
+
+// ---------- Navigation ----------
+$('btnNewReport').onclick = newReport;
+$('btnSettings').onclick = () => {
+  const activeId = document.querySelector('.screen.active').id;
+  screenStack.push([activeId, $('topTitle').textContent]);
+  renderSettings(); showScreen('scrSettings', 'Inställningar');
+};
+$('btnBack').onclick = async () => {
+  const activeId = document.querySelector('.screen.active').id;
+  const prev = screenStack.pop();
+  if (activeId === 'scrSettings' && current) { renderMode(); renderSignHint(); }
+  if (prev && prev[0] !== 'scrReports' && (prev[0] !== 'scrReport' || current)) { showScreen(prev[0], prev[1]); if (prev[0] === 'scrReport') renderReport(); return; }
+  await loadReports(); renderReports(); showScreen('scrReports'); screenStack = [];
+};
+
+// ---------- Start ----------
+(async () => {
+  $('appVersion').textContent = $('appVersion2').textContent = `Utläggsappen v${APP_VERSION} · ${APP_BUILD}`;
+  $('aiHint').textContent = settings.apiKey ? ' Kvitton läses av med AI (Claude).' : ' Tips: lägg in en API-nyckel under ⚙ för bättre avläsning av kvitton.';
+  try { await loadReports(); } catch (e) { console.error(e); toast('Kunde inte öppna databasen: ' + e.message, 'bad'); }
+  renderReports();
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+    navigator.serviceWorker.register('sw.js').catch((e) => console.warn('SW', e));
+  }
+})();
+
+// Exponeras för tester och felsökning
+window.__utlagg = { parseReceiptText, parsePageReceipts, clusterColumns, splitColumnsByWords, buildPdf, buildXlsx, addFiles, get state() { return { current, attachments, settings }; }, openReport, newReport, loadReports, get reports() { return reports; } };
+</script>
+</body>
+</html>
