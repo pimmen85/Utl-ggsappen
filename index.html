@@ -14,247 +14,389 @@
 <meta name="apple-mobile-web-app-title" content="Utlägg">
 <style>
 :root{
-  --bg:#f4f5f7;--card:#ffffff;--ink:#1c2430;--muted:#5b6675;--line:#dfe3e8;
-  --brand:#1f4e79;--brand-2:#2f6fb0;--soft:#e8f0f8;
-  --warn:#9a6700;--warn-bg:#fff4d6;--ok:#2f855a;--ok-bg:#e6f4ea;--bad:#c53030;--bad-bg:#fde8e8;
-  --auto-bg:#fffbea;--r:12px;
-  --shadow:0 1px 2px rgba(16,24,40,.06),0 1px 3px rgba(16,24,40,.10);
+  color-scheme:light dark;
+  --accent:#0a7aff;--accent-2:#0066d6;--accent-soft:rgba(10,122,255,.14);
+  --bg:#f5f5f7;--bg-2:#ebebef;--sidebar:rgba(244,244,247,.86);--card:#ffffff;--card-2:#f7f7f9;
+  --text:#1d1d1f;--text-2:#6e6e73;--text-3:#a9a9ae;
+  --hair:rgba(0,0,0,.08);--hair-2:rgba(0,0,0,.15);
+  --ok:#1f8a4c;--ok-bg:#e4f4ea;--warn:#8a5a00;--warn-bg:#fff2d1;--bad:#d1273b;--bad-bg:#fde7ea;
+  --shadow-card:0 1px 1px rgba(0,0,0,.03),0 2px 6px rgba(0,0,0,.05);
+  --shadow-pop:0 18px 50px rgba(0,0,0,.22),0 0 0 .5px rgba(0,0,0,.08);
+  --r:14px;--rc:8px;--tb-h:52px;
 }
+@media (prefers-color-scheme:dark){:root{
+  --accent:#0a84ff;--accent-2:#3395ff;--accent-soft:rgba(10,132,255,.26);
+  --bg:#1c1c1e;--bg-2:#2a2a2d;--sidebar:rgba(30,30,32,.86);--card:#2b2b2e;--card-2:#323235;
+  --text:#f5f5f7;--text-2:#a1a1a6;--text-3:#6e6e73;
+  --hair:rgba(255,255,255,.09);--hair-2:rgba(255,255,255,.17);
+  --ok:#30d158;--ok-bg:rgba(48,209,88,.16);--warn:#ffd60a;--warn-bg:rgba(255,214,10,.14);--bad:#ff453a;--bad-bg:rgba(255,69,58,.16);
+  --shadow-card:0 1px 1px rgba(0,0,0,.2),0 2px 8px rgba(0,0,0,.3);
+  --shadow-pop:0 18px 50px rgba(0,0,0,.6),0 0 0 .5px rgba(255,255,255,.1);
+}}
 *{box-sizing:border-box}
-html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-text-size-adjust:100%}
-button,input,select,textarea{font:inherit;color:inherit}
-a{color:var(--brand-2)}
-.top{position:sticky;top:0;z-index:5;background:var(--brand);color:#fff;padding:calc(env(safe-area-inset-top) + 10px) 14px 10px;display:flex;align-items:center;gap:10px;box-shadow:var(--shadow)}
-.top h1{font-size:17px;margin:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
-.iconbtn{background:rgba(255,255,255,.14);border:0;color:#fff;border-radius:10px;width:38px;height:38px;font-size:18px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto}
-.iconbtn[hidden]{display:none}
-main{max-width:980px;margin:0 auto;padding:14px 14px calc(env(safe-area-inset-bottom) + 48px)}
-.screen{display:none}.screen.active{display:block}
-.card{background:var(--card);border-radius:var(--r);box-shadow:var(--shadow);padding:14px;margin-bottom:14px}
-.card h2{font-size:13px;margin:0 0 10px;color:var(--brand);text-transform:uppercase;letter-spacing:.06em;font-weight:700}
-.cardhead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;flex-wrap:wrap}
-.cardhead h2{margin:0}
-.muted{color:var(--muted)}.small{font-size:13px}.tiny{font-size:12px}
-.btn{border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px 14px;cursor:pointer;font-weight:600;display:inline-flex;align-items:center;gap:6px;line-height:1.2;white-space:nowrap}
-.btn:disabled{opacity:.5;cursor:default}
-.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
-.btn.accent{background:var(--brand-2);border-color:var(--brand-2);color:#fff}
-.btn.danger{color:var(--bad);border-color:#f3c4c4}
-.btn.small{padding:6px 10px;font-size:13px;border-radius:8px}
-.btn.block{width:100%;justify-content:center}
-.actions{display:flex;gap:8px;flex-wrap:wrap}
-.field{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}
-.field label{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
-.field input,.field select,.field textarea{border:1px solid var(--line);border-radius:9px;padding:9px 10px;background:#fff;width:100%;min-width:0}
-.field input:focus,.field select:focus,.field textarea:focus{outline:2px solid var(--brand-2);outline-offset:0;border-color:var(--brand-2)}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
-@media (max-width:560px){.grid2{grid-template-columns:1fr}}
-.help{font-size:13px;color:var(--muted);margin:-4px 0 10px}
-.list{display:flex;flex-direction:column;gap:10px}
-.report-item{display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--line);border-radius:10px;cursor:pointer;background:#fff}
-.report-item:hover{border-color:var(--brand-2)}
-.report-item .t{font-weight:700}
-.report-item .meta{font-size:13px;color:var(--muted)}
-.report-item .sum{margin-left:auto;font-weight:700;white-space:nowrap}
-.empty{padding:22px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:10px}
-.att{display:grid;grid-template-columns:72px 1fr auto;gap:12px;align-items:center;padding:10px;border:1px solid var(--line);border-radius:10px;background:#fff}
-.att .thumb{width:72px;height:72px;border-radius:8px;object-fit:cover;background:var(--soft);border:1px solid var(--line);cursor:zoom-in}
-.att .thumb.ph{display:flex;align-items:center;justify-content:center;font-size:24px}
-.att .name{font-weight:600;word-break:break-word}
-.att .st{font-size:13px;margin-top:2px}
-.att .bils{display:inline-flex;gap:4px;flex-wrap:wrap;margin-top:4px}
-.att .ops{display:flex;flex-direction:column;gap:6px}
-@media (max-width:560px){.att{grid-template-columns:64px 1fr}.att .ops{grid-column:1/-1;flex-direction:row}}
-.badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:600;background:var(--soft);color:var(--brand)}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 -apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Helvetica Neue","Segoe UI",Roboto,Inter,sans-serif;-webkit-font-smoothing:antialiased;letter-spacing:-.005em}
+button,input,select,textarea{font:inherit;color:inherit;letter-spacing:inherit}
+a{color:var(--accent);text-decoration:none}
+svg.ic{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto}
+svg.ic.xs{width:12px;height:12px;stroke-width:2.4}
+.hidden,[hidden]{display:none !important}
+.muted{color:var(--text-2)}.small{font-size:13px}.tiny{font-size:12px}
+
+/* ── Layout: sidofält + innehåll ── */
+.app{min-height:100dvh}
+.sidebar{display:none}
+.content{min-width:0}
+.toolbar{position:sticky;top:0;z-index:20;height:calc(var(--tb-h) + env(safe-area-inset-top));padding:env(safe-area-inset-top) 10px 0;display:flex;align-items:center;gap:6px;background:color-mix(in srgb,var(--bg) 74%,transparent);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);border-bottom:.5px solid var(--hair)}
+.toolbar h1{flex:1;margin:0;font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center}
+.tb-side{width:76px;display:flex;gap:4px}
+.tb-side.r{justify-content:flex-end}
+.tbtn{width:34px;height:34px;border-radius:8px;border:0;background:transparent;color:var(--accent);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:background .12s}
+.tbtn:hover{background:var(--bg-2)}
+.tbtn:active{background:var(--hair-2)}
+.tbtn svg.ic{width:22px;height:22px;stroke-width:2}
+main{max-width:1040px;margin:0 auto;padding:16px 16px calc(env(safe-area-inset-bottom) + 56px)}
+@media (min-width:900px){
+  .app{display:grid;grid-template-columns:252px minmax(0,1fr)}
+  .sidebar{display:flex;flex-direction:column;position:sticky;top:0;height:100dvh;padding:16px 10px 12px;background:var(--sidebar);-webkit-backdrop-filter:saturate(180%) blur(30px);backdrop-filter:saturate(180%) blur(30px);border-right:.5px solid var(--hair)}
+  .toolbar{padding-left:16px;padding-right:16px}
+  .toolbar h1{text-align:left}
+  .tb-side{width:auto}
+  .tbtn{color:var(--text-2)}
+  .tbtn:hover{color:var(--text)}
+  .only-mobile{display:none !important}
+  main{padding:26px 32px 60px}
+}
+/* ── Sidofält ── */
+.sb-brand{display:flex;align-items:center;gap:10px;padding:2px 8px 14px;font-weight:700;font-size:15px;letter-spacing:-.01em}
+.sb-brand img{width:28px;height:28px;border-radius:7px;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+.sb-new{margin:0 2px 16px;justify-content:center}
+.sb-label{font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;padding:0 10px 6px}
+.sb-list{flex:1;overflow:auto;display:flex;flex-direction:column;gap:2px;min-height:0}
+.sb-item{display:flex;align-items:center;gap:9px;width:100%;text-align:left;padding:7px 10px;border:0;border-radius:8px;background:transparent;color:var(--text);cursor:pointer;font-size:13.5px;transition:background .1s}
+.sb-item:hover{background:rgba(0,0,0,.05)}
+.sb-item.active,.sb-item.active:hover{background:var(--accent);color:#fff}
+.sb-item .t{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:590}
+.sb-item .m{font-size:12px;opacity:.65;white-space:nowrap;font-variant-numeric:tabular-nums}
+.sb-item svg.ic{color:var(--accent)}
+.sb-item.active svg.ic{color:#fff}
+.sb-empty{padding:8px 10px;font-size:12.5px;color:var(--text-3)}
+.sb-foot{border-top:.5px solid var(--hair);padding-top:8px;margin-top:8px}
+.sb-version{font-size:11px;color:var(--text-3);padding:8px 10px 0}
+@media (prefers-color-scheme:dark){.sb-item:hover{background:rgba(255,255,255,.07)}}
+
+/* ── Kort och sektioner ── */
+.card{background:var(--card);border:.5px solid var(--hair);border-radius:var(--r);box-shadow:var(--shadow-card);padding:18px 20px;margin-bottom:18px}
+.card>h2,.sec-head h2{margin:0;font-size:15px;font-weight:650;letter-spacing:-.01em}
+.card>h2{margin-bottom:12px}
+.sec-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.sub{color:var(--text-2);font-size:13px;margin:-6px 0 14px}
+.footer{text-align:center;color:var(--text-3);font-size:12px;margin-top:22px}
+.screen{display:none}.screen.active{display:block;animation:fade .18s ease}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.screen.active{animation:none}}
+.empty{padding:24px;text-align:center;color:var(--text-3);border:.5px dashed var(--hair-2);border-radius:12px;font-size:13px}
+@media (max-width:600px){.card{padding:16px;border-radius:12px}}
+
+/* ── Knappar ── */
+.btn{height:32px;padding:0 13px;border-radius:var(--rc);border:.5px solid var(--hair-2);background:var(--card);color:var(--text);font-size:13.5px;font-weight:590;display:inline-flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;box-shadow:0 1px 1px rgba(0,0,0,.04);transition:filter .12s,transform .06s,background .12s}
+.btn:hover{background:var(--card-2)}
+.btn:active{transform:scale(.985);filter:brightness(.95)}
+.btn:disabled{opacity:.45;cursor:default;transform:none}
+.btn.primary{background:linear-gradient(180deg,#3a92ff,#0a6ff0);border-color:rgba(0,0,0,.06);color:#fff;box-shadow:0 1px 2px rgba(10,111,240,.35),inset 0 .5px 0 rgba(255,255,255,.25)}
+.btn.primary:hover{background:linear-gradient(180deg,#2f88f7,#0664db)}
+.btn.danger{color:var(--bad)}
+.btn.small{height:28px;padding:0 10px;font-size:12.5px;gap:5px}
+.btn.big{height:38px;padding:0 20px;font-size:14px}
+.btn.icon{width:28px;padding:0;justify-content:center}
+.btn.icon:not(.small){width:32px}
+.actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.filebtns{display:flex;gap:8px;flex-wrap:wrap}
+@media (max-width:600px){.filebtns .btn{flex:1;justify-content:center;height:40px;font-size:14px}}
+
+/* ── Formulär ── */
+.field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px;min-width:0}
+.field label{font-size:12.5px;font-weight:500;color:var(--text-2)}
+.ctl,.field input,.field select,.field textarea{height:34px;border:.5px solid var(--hair-2);border-radius:7px;padding:0 10px;background:var(--card);color:var(--text);width:100%;min-width:0;box-shadow:inset 0 1px 1px rgba(0,0,0,.03);transition:box-shadow .12s,border-color .12s}
+.field select,select.ctl{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236e6e73' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>");background-repeat:no-repeat;background-position:right 9px center;padding-right:26px}
+.ctl:focus,.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3.5px var(--accent-soft)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+.form-row{display:grid;grid-template-columns:190px 1fr;gap:6px 16px;align-items:center;padding:10px 0;border-top:.5px solid var(--hair)}
+.form-row:first-of-type{border-top:0;padding-top:0}
+.form-row>label{font-size:13.5px;color:var(--text)}
+.form-row .ctl{max-width:420px}
+input.amount{text-align:right;font-variant-numeric:tabular-nums}
+@media (max-width:600px){.grid2{grid-template-columns:1fr}.ctl,.field input,.field select{font-size:16px;height:38px}.form-row{grid-template-columns:1fr}}
+
+/* ── Grupperad lista (rapporter på mobil) ── */
+.glist{background:var(--card);border:.5px solid var(--hair);border-radius:12px;overflow:hidden;box-shadow:var(--shadow-card)}
+.gitem{display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;border:0;border-top:.5px solid var(--hair);background:transparent;color:inherit;text-align:left;cursor:pointer}
+.gitem:first-child{border-top:0}
+.gitem:active{background:var(--bg-2)}
+.gitem .min{flex:1;min-width:0}
+.gitem .t{font-weight:590;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gitem .m{font-size:12.5px;color:var(--text-2)}
+.gitem .sum{font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.gitem .chev{color:var(--text-3)}
+
+/* ── Välkomstpanel ── */
+.welcome{text-align:center;padding:36px 24px 30px}
+.welcome .wicon{width:64px;height:64px;border-radius:18px;background:linear-gradient(180deg,#3a92ff,#0a6ff0);color:#fff;display:inline-flex;align-items:center;justify-content:center;margin-bottom:14px;box-shadow:0 6px 18px rgba(10,111,240,.35)}
+.welcome .wicon svg.ic{width:34px;height:34px;stroke-width:1.6}
+.welcome h2{font-size:23px;font-weight:700;letter-spacing:-.02em;margin:0 0 6px}
+.welcome p{color:var(--text-2);max-width:540px;margin:0 auto 16px;font-size:14.5px}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;text-align:left;margin:22px auto 22px;max-width:760px}
+.step{background:var(--card-2);border:.5px solid var(--hair);border-radius:12px;padding:14px}
+.step .n{display:inline-flex;width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;font-size:12px;font-weight:700;align-items:center;justify-content:center;margin-bottom:8px}
+.step b{display:block;font-size:13.5px;margin-bottom:2px}
+.step span{font-size:12.5px;color:var(--text-2)}
+.hint{font-size:12.5px;color:var(--text-3);margin:14px 0 0}
+@media (max-width:600px){.steps{grid-template-columns:1fr;gap:8px}.welcome{padding:22px 16px}.welcome h2{font-size:19px}}
+
+/* ── Bilagor (galleri) ── */
+.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px}
+@media (max-width:600px){.gallery{grid-template-columns:repeat(2,1fr);gap:10px}}
+.att{border:.5px solid var(--hair);border-radius:12px;background:var(--card);overflow:hidden;display:flex;flex-direction:column;box-shadow:var(--shadow-card)}
+.att .thumbwrap{position:relative;aspect-ratio:4/3;background:var(--bg-2);display:flex;align-items:center;justify-content:center;cursor:zoom-in;overflow:hidden}
+.att .thumbwrap img{width:100%;height:100%;object-fit:contain}
+.att .thumbwrap .ph{width:36px;height:36px;color:var(--text-3);stroke-width:1.4}
+.att .nums{position:absolute;top:8px;left:8px;display:flex;gap:4px;flex-wrap:wrap}
+.att .body{padding:10px 12px 12px;display:flex;flex-direction:column;gap:6px;flex:1}
+.att .name{font-size:13px;font-weight:590;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.att .st{font-size:12.5px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.att .ops{display:flex;gap:6px;margin-top:auto;padding-top:4px}
+.att .ops .btn:first-child{flex:1;justify-content:center}
+
+/* ── Etiketter ── */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:999px;font-size:11.5px;font-weight:600;background:var(--bg-2);color:var(--text-2);line-height:1.5}
 .badge.ok{background:var(--ok-bg);color:var(--ok)}
 .badge.warn{background:var(--warn-bg);color:var(--warn)}
 .badge.bad{background:var(--bad-bg);color:var(--bad)}
-.badge.busy{background:#e9edf3;color:#334}
-.num{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;border:2px solid #1a4bd8;color:#1a4bd8;font-weight:700;font-size:13px;background:#fff;flex:0 0 auto}
-.row-card{border:1px solid var(--line);border-radius:10px;padding:10px;background:#fff}
-.row-card.auto{background:var(--auto-bg)}
-.row-card .rh{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
-.row-card .rh .sp{flex:1}
-.row-card .rgrid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
-.row-card .rgrid .field{margin:0}
-.row-card .rgrid .wide{grid-column:span 2}
-@media (max-width:820px){.row-card .rgrid{grid-template-columns:repeat(3,1fr)}}
-@media (max-width:560px){.row-card .rgrid{grid-template-columns:repeat(2,1fr)}.row-card .rgrid .wide{grid-column:span 2}}
-.row-card input.amount{text-align:right;font-variant-numeric:tabular-nums}
-.sumbar{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px 14px;border-radius:10px;background:var(--soft);font-weight:700}
-.sumbar .v{font-variant-numeric:tabular-nums}
-.pill{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:var(--soft);font-size:13px;color:var(--brand)}
+.badge.busy{background:var(--accent-soft);color:var(--accent)}
+.num{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;padding:0 5px;border-radius:11px;border:1.5px solid #1a4bd8;color:#1a4bd8;background:#fff;font-weight:700;font-size:12px;flex:0 0 auto;font-variant-numeric:tabular-nums}
+.pill{height:26px;padding:0 10px;border-radius:999px;display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:590;background:var(--accent-soft);color:var(--accent)}
 .pill.warn{background:var(--warn-bg);color:var(--warn)}
-.progress{height:6px;background:#e9edf3;border-radius:3px;overflow:hidden;margin-top:8px}
-.progress>div{height:100%;background:var(--brand-2);width:0;transition:width .2s}
-#toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 18px);transform:translateX(-50%);background:#1c2430;color:#fff;padding:10px 16px;border-radius:10px;font-size:14px;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .2s;z-index:50;max-width:92vw;text-align:center}
-#toast.show{opacity:1}
-#toast.bad{background:var(--bad)}
-#toast.ok{background:var(--ok)}
-.frame{width:100%;height:min(75vh,900px);border:1px solid var(--line);border-radius:10px;background:#fff}
-dialog{border:0;border-radius:14px;padding:16px;max-width:96vw;width:640px;box-shadow:0 10px 40px rgba(0,0,0,.25)}
-dialog::backdrop{background:rgba(0,0,0,.45)}
-dialog h3{margin:0 0 8px}
-#sigCanvas{width:100%;height:220px;border:1px dashed var(--line);border-radius:10px;background:#fff;touch-action:none;display:block}
-.sigprev{max-width:100%;max-height:90px;border:1px solid var(--line);border-radius:8px;background:#fff;padding:4px}
-.footer{text-align:center;color:var(--muted);font-size:12px;margin-top:18px}
-.filebtns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-@media (min-width:561px){.filebtns{grid-template-columns:auto auto;justify-content:start}}
-.hidden{display:none !important}
-.kbd{font-family:ui-monospace,Menlo,monospace;font-size:13px;background:#f0f2f5;padding:1px 5px;border-radius:5px}
-.check{display:flex;align-items:center;gap:8px;margin:6px 0}
-.check input{width:18px;height:18px}
+.progress{height:4px;width:100%;background:var(--bg-2);border-radius:2px;overflow:hidden;margin-top:2px}
+.progress>div{height:100%;background:var(--accent);width:0;transition:width .2s}
+
+/* ── Utläggsrader ── */
+.rows{display:flex;flex-direction:column;gap:10px}
+.row-card{border:.5px solid var(--hair);border-radius:12px;padding:12px 14px;background:var(--card);box-shadow:var(--shadow-card)}
+.row-card.auto{background:color-mix(in srgb,var(--warn-bg) 45%,var(--card))}
+.row-card .rh{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.row-card .rh .src{flex:0 1 auto;min-width:0;font-size:12.5px;color:var(--text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row-card .rh .sp{flex:1 0 0}
+.row-card .rh .badge{flex:0 0 auto}
+.rgrid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
+.rgrid .field{margin:0}
+.rgrid .wide{grid-column:span 2}
+@media (max-width:820px){.rgrid{grid-template-columns:repeat(3,1fr)}}
+@media (max-width:600px){.rgrid{grid-template-columns:repeat(2,1fr);gap:8px}.rgrid .wide{grid-column:span 2}.row-card{padding:12px}}
+.sumbar{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:14px 16px;border-radius:12px;background:var(--card-2);border:.5px solid var(--hair);margin-top:14px}
+.sumbar .lbl{font-weight:590}
+.sumbar .big{font-size:22px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.sumbar .vat{flex-basis:100%;font-size:12.5px;color:var(--text-2)}
+
+/* ── Förhandsgranskning ── */
+.frame{width:100%;height:min(78vh,1000px);border:.5px solid var(--hair);border-radius:12px;background:var(--bg-2)}
+
+/* ── Signatur ── */
+.sigprev{max-width:100%;max-height:84px;border:.5px solid var(--hair);border-radius:8px;background:#fff;padding:6px}
+#sigCanvas{width:100%;height:220px;border:.5px dashed var(--hair-2);border-radius:12px;background:#fff;touch-action:none;display:block}
+
+/* ── Dialog och notis ── */
+dialog{border:0;border-radius:16px;padding:20px;width:620px;max-width:min(96vw,620px);background:var(--card);color:var(--text);box-shadow:var(--shadow-pop)}
+dialog::backdrop{background:rgba(0,0,0,.32);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+dialog h3{margin:0 0 4px;font-size:16px;font-weight:650}
+#toast{position:fixed;z-index:60;left:50%;bottom:calc(env(safe-area-inset-bottom) + 18px);transform:translateX(-50%) translateY(8px);background:color-mix(in srgb,var(--card) 90%,transparent);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);color:var(--text);padding:10px 14px;border-radius:12px;font-size:13.5px;box-shadow:var(--shadow-pop);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;max-width:92vw;text-align:center;border-left:3px solid var(--accent)}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#toast.bad{border-left-color:var(--bad)}
+#toast.ok{border-left-color:var(--ok)}
+@media (min-width:900px){#toast{left:auto;right:20px;top:calc(var(--tb-h) + 12px);bottom:auto;transform:translateY(-6px);text-align:left;max-width:380px}#toast.show{transform:none}}
 </style>
 </head>
 <body>
-<header class="top">
-  <button class="iconbtn" id="btnBack" title="Tillbaka" hidden>‹</button>
-  <h1 id="topTitle">Utläggsappen</h1>
-  <button class="iconbtn" id="btnSettings" title="Inställningar">⚙</button>
-</header>
+<svg hidden xmlns="http://www.w3.org/2000/svg">
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
+  <symbol id="i-camera" viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></symbol>
+  <symbol id="i-clip" viewBox="0 0 24 24"><path d="M21 12.5l-8.5 8.5a5.5 5.5 0 0 1-7.8-7.8l9-9a3.5 3.5 0 1 1 5 5l-9 9a1.5 1.5 0 0 1-2.1-2.1l8.3-8.3"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-doc" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></symbol>
+  <symbol id="i-table" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 4v16"/></symbol>
+  <symbol id="i-pen" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></symbol>
+  <symbol id="i-up" viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12M6 9l6 6 6-6M4 21h16"/></symbol>
+  <symbol id="i-share" viewBox="0 0 24 24"><path d="M12 3v12M7 8l5-5 5 5M5 14v6h14v-6"/></symbol>
+  <symbol id="i-open" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M19 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5"/></symbol>
+  <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 17l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z"/></symbol>
+  <symbol id="i-scan" viewBox="0 0 24 24"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M4 12h16"/></symbol>
+  <symbol id="i-receipt" viewBox="0 0 24 24"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6M9 16h3"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></symbol>
+  <symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M15 8l3 3M18 5l2 2"/></symbol>
+</svg>
 
-<main>
-  <!-- ── RAPPORTER ── -->
-  <section id="scrReports" class="screen active">
-    <div class="card">
-      <div class="cardhead">
-        <h2>Utläggsrapporter</h2>
-        <button class="btn primary" id="btnNewReport">+ Ny rapport</button>
-      </div>
-      <div id="reportList" class="list"></div>
+<div class="app">
+  <!-- ── Sidofält (dator/surfplatta i liggande läge) ── -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-brand"><img src="icon.svg" alt=""><span>Utlägg</span></div>
+    <button class="btn primary sb-new" id="btnNewReportSide"><svg class="ic"><use href="#i-plus"/></svg>Ny rapport</button>
+    <div class="sb-label">Rapporter</div>
+    <nav id="sideList" class="sb-list"></nav>
+    <div class="sb-foot">
+      <button class="sb-item" id="btnSettingsSide"><svg class="ic"><use href="#i-gear"/></svg><span class="t">Inställningar</span></button>
+      <div class="sb-version" id="appVersionSide"></div>
     </div>
-    <div class="card small muted" id="introCard">
-      <b>Så funkar det:</b> skapa en rapport, fota eller ladda upp kvitton (bild eller PDF), granska raderna och skapa en samlad PDF med redovisning och bilagor på en sida.
-      Allt sparas lokalt i den här webbläsaren.
-      <span id="aiHint"></span>
-    </div>
-    <div class="footer" id="appVersion"></div>
-  </section>
+  </aside>
 
-  <!-- ── RAPPORT ── -->
-  <section id="scrReport" class="screen">
-    <div class="card">
-      <h2>Uppgifter</h2>
-      <div class="field"><label for="rTitle">Rapportens namn</label><input id="rTitle" data-r="title" placeholder="t.ex. Augusti 2026"></div>
-      <div class="grid2">
-        <div class="field"><label for="rName">Namn</label><input id="rName" data-r="name" autocomplete="name"></div>
-        <div class="field"><label for="rEmp">Anställningsnummer</label><input id="rEmp" data-r="employeeNo" inputmode="numeric"></div>
-        <div class="field"><label for="rPurpose">Syfte</label><input id="rPurpose" data-r="purpose" placeholder="Utlägg"></div>
-        <div class="field"><label for="rDest">Ev Resmål</label><input id="rDest" data-r="destination"></div>
-      </div>
-    </div>
+  <div class="content">
+    <header class="toolbar">
+      <div class="tb-side"><button class="tbtn" id="btnBack" title="Tillbaka" hidden><svg class="ic"><use href="#i-back"/></svg></button></div>
+      <h1 id="topTitle">Utläggsappen</h1>
+      <div class="tb-side r"><button class="tbtn" id="btnSettings" title="Inställningar"><svg class="ic"><use href="#i-gear"/></svg></button></div>
+    </header>
 
-    <div class="card">
-      <div class="cardhead">
-        <h2>Kvitton (bilagor)</h2>
-        <span class="pill" id="modePill"></span>
-      </div>
-      <div class="filebtns">
-        <button class="btn accent" id="btnCam">📷 Fota kvitto</button>
-        <button class="btn" id="btnFiles">📎 Välj bild/PDF</button>
-      </div>
-      <input type="file" id="camInput" accept="image/*" capture="environment" class="hidden">
-      <input type="file" id="fileInput" accept="image/*,application/pdf,.pdf,.heic,.heif" multiple class="hidden">
-      <p class="help" style="margin-top:8px">Varje kvitto blir en rad nedan. Belopp, moms, datum och beskrivning läses av automatiskt – kontrollera och rätta vid behov.</p>
-      <div id="attachList" class="list"></div>
-    </div>
+    <main>
+      <!-- ── RAPPORTER ── -->
+      <section id="scrReports" class="screen active">
+        <div class="only-mobile">
+          <div class="sec-head"><h2>Rapporter</h2><button class="btn primary" id="btnNewReportTop"><svg class="ic"><use href="#i-plus"/></svg>Ny rapport</button></div>
+          <div id="reportList" class="glist" style="margin-bottom:18px"></div>
+        </div>
+        <div class="card welcome">
+          <div class="wicon"><svg class="ic"><use href="#i-receipt"/></svg></div>
+          <h2>Utläggsredovisning på några minuter</h2>
+          <p>Fota kvittona, låt appen läsa av belopp, moms och datum, och få en färdig PDF med redovisning och bilagor att skicka för attest.</p>
+          <div class="steps">
+            <div class="step"><span class="n">1</span><b>Fota eller ladda upp</b><span>Bilder eller PDF:er. Flera kvitton på samma skanning delas upp automatiskt.</span></div>
+            <div class="step"><span class="n">2</span><b>Granska raderna</b><span>Belopp, moms, datum och beskrivning fylls i. Gulmarkerade rader bör kontrolleras.</span></div>
+            <div class="step"><span class="n">3</span><b>Skapa PDF</b><span>Redovisning enligt mallen med bilagorna på samma sida, signerad och klar att skicka.</span></div>
+          </div>
+          <button class="btn primary big" id="btnNewReport"><svg class="ic"><use href="#i-plus"/></svg>Ny rapport</button>
+          <p class="hint" id="aiHint"></p>
+        </div>
+        <div class="footer" id="appVersion"></div>
+      </section>
 
-    <div class="card">
-      <div class="cardhead">
-        <h2>Utläggsrader</h2>
-        <button class="btn small" id="btnAddRow">+ Rad utan kvitto</button>
-      </div>
-      <div id="rowList" class="list"></div>
-      <div class="sumbar" style="margin-top:12px">
-        <span>Totalt belopp att utbetala</span><span class="v"><span id="sumTotal">0,00</span> kr</span>
-        <span class="muted small" style="flex-basis:100%">varav moms <span id="sumVat" class="v">0,00</span> kr</span>
-      </div>
-    </div>
+      <!-- ── RAPPORT ── -->
+      <section id="scrReport" class="screen">
+        <div class="card">
+          <h2>Uppgifter</h2>
+          <div class="field"><label for="rTitle">Rapportens namn</label><input id="rTitle" data-r="title" placeholder="t.ex. Augusti 2026"></div>
+          <div class="grid2">
+            <div class="field"><label for="rName">Namn</label><input id="rName" data-r="name" autocomplete="name"></div>
+            <div class="field"><label for="rEmp">Anställningsnummer</label><input id="rEmp" data-r="employeeNo" inputmode="numeric"></div>
+            <div class="field"><label for="rPurpose">Syfte</label><input id="rPurpose" data-r="purpose" placeholder="Utlägg"></div>
+            <div class="field"><label for="rDest">Ev Resmål</label><input id="rDest" data-r="destination"></div>
+          </div>
+        </div>
 
-    <div class="card">
-      <h2>Skapa</h2>
-      <div class="actions">
-        <button class="btn primary" id="btnPdf">📄 Skapa PDF</button>
-        <button class="btn" id="btnXlsx">📊 Ladda ner Excel</button>
-        <button class="btn" id="btnSign">✍️ Signatur</button>
-        <button class="btn danger" id="btnDeleteReport" style="margin-left:auto">Ta bort rapport</button>
-      </div>
-      <p class="help" style="margin:10px 0 0" id="signHint"></p>
-    </div>
-  </section>
+        <div class="card">
+          <div class="sec-head"><h2>Kvitton</h2><span class="pill" id="modePill"></span></div>
+          <div class="filebtns">
+            <button class="btn primary" id="btnCam"><svg class="ic"><use href="#i-camera"/></svg>Fota kvitto</button>
+            <button class="btn" id="btnFiles"><svg class="ic"><use href="#i-clip"/></svg>Välj bild eller PDF</button>
+          </div>
+          <input type="file" id="camInput" accept="image/*" capture="environment" class="hidden">
+          <input type="file" id="fileInput" accept="image/*,application/pdf,.pdf,.heic,.heif" multiple class="hidden">
+          <p class="sub" style="margin:12px 0 14px">Varje kvitto blir en rad nedan. Belopp, moms, datum och beskrivning läses av automatiskt. Kontrollera och rätta vid behov.</p>
+          <div id="attachList" class="gallery"></div>
+        </div>
 
-  <!-- ── INSTÄLLNINGAR ── -->
-  <section id="scrSettings" class="screen">
-    <div class="card">
-      <h2>Standardvärden</h2>
-      <p class="help">Fylls i automatiskt i nya rapporter och rader. Uppdateras när du sparar en rapport.</p>
-      <div class="grid2">
-        <div class="field"><label for="sName">Namn</label><input id="sName" data-s="name"></div>
-        <div class="field"><label for="sEmp">Anställningsnummer</label><input id="sEmp" data-s="employeeNo" inputmode="numeric"></div>
-        <div class="field"><label for="sCompany">Företag (sidhuvud)</label><input id="sCompany" data-s="company"></div>
-        <div class="field"><label for="sPurpose">Syfte</label><input id="sPurpose" data-s="purpose"></div>
-        <div class="field"><label for="sProject">Projekt</label><input id="sProject" data-s="project"></div>
-        <div class="field"><label for="sKst">Kst</label><input id="sKst" data-s="kst"></div>
-        <div class="field"><label for="sAccount">Konto</label><input id="sAccount" data-s="account"></div>
-      </div>
-    </div>
+        <div class="card">
+          <div class="sec-head"><h2>Utläggsrader</h2><button class="btn small" id="btnAddRow"><svg class="ic"><use href="#i-plus"/></svg>Rad utan kvitto</button></div>
+          <div id="rowList" class="rows"></div>
+          <div class="sumbar">
+            <span class="lbl">Totalt belopp att utbetala</span><span class="big"><span id="sumTotal">0,00</span> kr</span>
+            <span class="vat">varav moms <span id="sumVat">0,00</span> kr</span>
+          </div>
+        </div>
 
-    <div class="card">
-      <h2>Signatur</h2>
-      <p class="help">Ritas in i fältet <b>Sign</b> tillsammans med dagens datum när du skapar PDF:en.</p>
-      <div id="sigBox"></div>
-      <div class="actions" style="margin-top:10px">
-        <button class="btn" id="btnSigDraw">✍️ Rita signatur</button>
-        <button class="btn danger" id="btnSigClear">Ta bort</button>
-      </div>
-    </div>
+        <div class="card">
+          <h2>Skapa</h2>
+          <div class="actions">
+            <button class="btn primary" id="btnPdf"><svg class="ic"><use href="#i-doc"/></svg><span>Skapa PDF</span></button>
+            <button class="btn" id="btnXlsx"><svg class="ic"><use href="#i-table"/></svg>Ladda ner Excel</button>
+            <button class="btn" id="btnSign"><svg class="ic"><use href="#i-pen"/></svg>Signatur</button>
+            <button class="btn danger" id="btnDeleteReport" style="margin-left:auto"><svg class="ic"><use href="#i-trash"/></svg>Ta bort rapport</button>
+          </div>
+          <p class="sub" style="margin:12px 0 0" id="signHint"></p>
+        </div>
+      </section>
 
-    <div class="card">
-      <h2>Kvittoläsning med AI</h2>
-      <p class="help">Med en API-nyckel från Anthropic (Claude) läses kvittona av med hög träffsäkerhet, inklusive beskrivning. Nyckeln sparas bara i den här webbläsaren och skickas enbart till Anthropic. Utan nyckel används lokal OCR i webbläsaren.</p>
-      <div class="field"><label for="sKey">API-nyckel</label><input id="sKey" data-s="apiKey" type="password" autocomplete="off" placeholder="sk-ant-…"></div>
-      <div class="actions">
-        <button class="btn" id="btnTestKey">Testa nyckel</button>
-        <span id="keyStatus" class="small muted" style="align-self:center"></span>
-      </div>
-    </div>
+      <!-- ── INSTÄLLNINGAR ── -->
+      <section id="scrSettings" class="screen">
+        <div class="card">
+          <h2>Standardvärden</h2>
+          <p class="sub">Fylls i automatiskt i nya rapporter och rader, och uppdateras när du sparar en rapport.</p>
+          <div class="form-row"><label for="sName">Namn</label><input class="ctl" id="sName" data-s="name"></div>
+          <div class="form-row"><label for="sEmp">Anställningsnummer</label><input class="ctl" id="sEmp" data-s="employeeNo" inputmode="numeric"></div>
+          <div class="form-row"><label for="sCompany">Företag i sidhuvudet</label><input class="ctl" id="sCompany" data-s="company"></div>
+          <div class="form-row"><label for="sPurpose">Syfte</label><input class="ctl" id="sPurpose" data-s="purpose"></div>
+          <div class="form-row"><label for="sProject">Projekt</label><input class="ctl" id="sProject" data-s="project"></div>
+          <div class="form-row"><label for="sKst">Kst</label><input class="ctl" id="sKst" data-s="kst"></div>
+          <div class="form-row"><label for="sAccount">Konto</label><input class="ctl" id="sAccount" data-s="account"></div>
+        </div>
 
-    <div class="card">
-      <h2>Offline-OCR</h2>
-      <p class="help">Den lokala kvittoläsningen (Tesseract, svenska) laddar ner ca 7 MB första gången den används. Hämta i förväg om du vill kunna läsa kvitton utan nät.</p>
-      <div class="actions">
-        <button class="btn" id="btnOcrDl">Hämta offline-OCR</button>
-        <span id="ocrStatus" class="small muted" style="align-self:center"></span>
-      </div>
-    </div>
-    <div class="footer" id="appVersion2"></div>
-  </section>
+        <div class="card">
+          <h2>Signatur</h2>
+          <p class="sub">Ritas in i fältet <b>Sign</b> tillsammans med dagens datum när du skapar PDF:en.</p>
+          <div id="sigBox"></div>
+          <div class="actions" style="margin-top:12px">
+            <button class="btn" id="btnSigDraw"><svg class="ic"><use href="#i-pen"/></svg>Rita signatur</button>
+            <button class="btn danger" id="btnSigClear"><svg class="ic"><use href="#i-trash"/></svg>Ta bort</button>
+          </div>
+        </div>
 
-  <!-- ── FÖRHANDSGRANSKNING ── -->
-  <section id="scrPreview" class="screen">
-    <div class="card">
-      <div class="cardhead">
-        <h2>Färdig PDF</h2>
-        <span class="small muted" id="previewInfo"></span>
-      </div>
-      <div class="actions" style="margin-bottom:12px">
-        <button class="btn primary" id="btnDownload">⬇︎ Spara PDF</button>
-        <button class="btn" id="btnOpen">Öppna i ny flik</button>
-        <button class="btn" id="btnShare" hidden>Dela…</button>
-      </div>
-      <iframe class="frame" id="pdfFrame" title="Förhandsgranskning"></iframe>
-      <p class="help" style="margin-top:10px">Skicka PDF:en för attest och vidare till löneavdelningen. Bilagorna ligger överst och redovisningen nederst, på en A3-sida (fler sidor om bilagorna inte får plats).</p>
-    </div>
-  </section>
-</main>
+        <div class="card">
+          <h2>Kvittoläsning med AI</h2>
+          <p class="sub">Med en API-nyckel från Anthropic (Claude) läses kvittona av med hög träffsäkerhet, inklusive beskrivning. Nyckeln sparas bara i den här webbläsaren och skickas enbart till Anthropic. Utan nyckel används lokal OCR i webbläsaren.</p>
+          <div class="form-row"><label for="sKey">API-nyckel</label><input class="ctl" id="sKey" data-s="apiKey" type="password" autocomplete="off" placeholder="sk-ant-…"></div>
+          <div class="actions" style="margin-top:10px">
+            <button class="btn" id="btnTestKey"><svg class="ic"><use href="#i-key"/></svg>Testa nyckel</button>
+            <span id="keyStatus" class="small muted"></span>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Offline-OCR</h2>
+          <p class="sub">Den lokala kvittoläsningen (Tesseract, svenska) laddar ner cirka 7 MB första gången den används. Hämta i förväg om du vill kunna läsa kvitton utan nät.</p>
+          <div class="actions">
+            <button class="btn" id="btnOcrDl"><svg class="ic"><use href="#i-download"/></svg>Hämta offline-OCR</button>
+            <span id="ocrStatus" class="small muted"></span>
+          </div>
+        </div>
+        <div class="footer" id="appVersion2"></div>
+      </section>
+
+      <!-- ── FÖRHANDSGRANSKNING ── -->
+      <section id="scrPreview" class="screen">
+        <div class="card">
+          <div class="sec-head"><h2>Färdig PDF</h2><span class="small muted" id="previewInfo"></span></div>
+          <div class="actions" style="margin-bottom:14px">
+            <button class="btn primary" id="btnDownload"><svg class="ic"><use href="#i-download"/></svg>Spara PDF</button>
+            <button class="btn" id="btnOpen"><svg class="ic"><use href="#i-open"/></svg>Öppna i ny flik</button>
+            <button class="btn" id="btnShare" hidden><svg class="ic"><use href="#i-share"/></svg>Dela…</button>
+          </div>
+          <iframe class="frame" id="pdfFrame" title="Förhandsgranskning"></iframe>
+          <p class="sub" style="margin:12px 0 0">Skicka PDF:en för attest och vidare till löneavdelningen. Bilagorna ligger överst och redovisningen nederst på en A3-sida, med fler sidor om bilagorna inte får plats.</p>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
 
 <div id="toast"></div>
 
 <dialog id="dlgSign">
   <h3>Rita din signatur</h3>
-  <p class="help">Skriv med fingret, pennan eller musen.</p>
+  <p class="sub" style="margin:0 0 12px">Skriv med fingret, pennan eller musen.</p>
   <canvas id="sigCanvas"></canvas>
-  <div class="actions" style="margin-top:12px;justify-content:flex-end">
+  <div class="actions" style="margin-top:14px;justify-content:flex-end">
     <button class="btn" id="btnSigReset">Rensa</button>
     <button class="btn" id="btnSigCancel">Avbryt</button>
     <button class="btn primary" id="btnSigDone">Spara</button>
@@ -281,7 +423,7 @@ import * as pdfjsLib from './vendor/pdfjs/pdf.min.mjs';
 
 // Höjs vid varje publicerad ändring, så man kan se om enheten har senaste bygget.
 // Höj även CACHE i sw.js.
-const APP_VERSION = '1.0';
+const APP_VERSION = '1.1';
 const APP_BUILD = '2026-09-04';
 
 const $ = (id) => document.getElementById(id);
@@ -374,10 +516,17 @@ let screenStack = [];
 
 function showScreen(id, title) {
   document.querySelectorAll('.screen').forEach((s) => s.classList.toggle('active', s.id === id));
-  $('topTitle').textContent = title || 'Utläggsappen';
+  document.body.dataset.screen = id;
+  $('topTitle').textContent = title || (id === 'scrReports' ? 'Utläggsappen' : '');
   $('btnBack').hidden = id === 'scrReports';
   $('btnSettings').hidden = id === 'scrSettings';
+  renderSidebarState();
   window.scrollTo(0, 0);
+}
+function renderSidebarState() {
+  const id = document.body.dataset.screen;
+  document.querySelectorAll('#sideList .sb-item').forEach((el) => el.classList.toggle('active', id === 'scrReport' && !!current && el.dataset.id === current.id));
+  $('btnSettingsSide').classList.toggle('active', id === 'scrSettings');
 }
 
 // ---------- Rapporter ----------
@@ -390,16 +539,19 @@ function reportTotals(r) {
   return { total: round2(total), vat: round2(vat) };
 }
 function renderReports() {
+  const items = reports.map((r) => ({ r, t: reportTotals(r), date: new Date(r.updatedAt || r.createdAt).toLocaleDateString('sv-SE') }));
+  // Lista på mobil (grupperad lista) …
   const el = $('reportList');
-  if (!reports.length) { el.innerHTML = '<div class="empty">Inga rapporter ännu. Tryck på <b>+ Ny rapport</b> för att börja.</div>'; return; }
-  el.innerHTML = reports.map((r) => {
-    const t = reportTotals(r);
-    return `<div class="report-item" data-id="${r.id}">
-      <div><div class="t">${esc(r.title || 'Utan namn')}</div>
-      <div class="meta">${(r.rows || []).length} rader · uppdaterad ${new Date(r.updatedAt || r.createdAt).toLocaleDateString('sv-SE')}</div></div>
-      <div class="sum">${fmtAmount(t.total)} kr</div></div>`;
-  }).join('');
-  el.querySelectorAll('.report-item').forEach((it) => it.onclick = () => openReport(it.dataset.id));
+  el.innerHTML = items.length ? items.map(({ r, t, date }) => `<button class="gitem" data-id="${r.id}">
+      <div class="min"><div class="t">${esc(r.title || 'Utan namn')}</div><div class="m">${(r.rows || []).length} rader · ${date}</div></div>
+      <div class="sum">${fmtAmount(t.total)} kr</div><svg class="ic chev"><use href="#i-chev"/></svg></button>`).join('')
+    : '<div class="empty">Inga rapporter ännu. Tryck på <b>Ny rapport</b> för att börja.</div>';
+  // … och i sidofältet på dator
+  const side = $('sideList');
+  side.innerHTML = items.length ? items.map(({ r, t }) => `<button class="sb-item" data-id="${r.id}"><svg class="ic"><use href="#i-doc"/></svg><span class="t">${esc(r.title || 'Utan namn')}</span><span class="m">${fmtAmount(t.total)} kr</span></button>`).join('')
+    : '<div class="sb-empty">Inga rapporter ännu</div>';
+  document.querySelectorAll('#reportList [data-id], #sideList [data-id]').forEach((it) => it.onclick = () => openReport(it.dataset.id));
+  renderSidebarState();
 }
 async function newReport() {
   const r = {
@@ -407,7 +559,7 @@ async function newReport() {
     purpose: settings.purpose || 'Utlägg', destination: settings.destination || '',
     rows: [], createdAt: Date.now(), updatedAt: Date.now(),
   };
-  await dbPut('reports', r); reports.unshift(r);
+  await dbPut('reports', r); reports.unshift(r); renderReports();
   await openReport(r.id);
 }
 async function openReport(id) {
@@ -433,6 +585,7 @@ const saveReport = debounce(async () => {
   if (changed) saveSettings();
   const idx = reports.findIndex((r) => r.id === current.id); if (idx >= 0) reports[idx] = current;
   $('topTitle').textContent = current.title || 'Rapport';
+  renderReports();
 }, 350);
 
 document.querySelectorAll('[data-r]').forEach((inp) => inp.addEventListener('input', () => {
@@ -442,7 +595,7 @@ document.querySelectorAll('[data-r]').forEach((inp) => inp.addEventListener('inp
 function renderReport() { renderMode(); renderAttachments(); renderRows(); renderSums(); renderSignHint(); }
 function renderMode() {
   const ai = !!settings.apiKey;
-  $('modePill').textContent = ai ? '✨ AI-läsning (Claude)' : '🔍 Lokal OCR';
+  $('modePill').innerHTML = ai ? '<svg class="ic"><use href="#i-sparkle"/></svg>AI-läsning (Claude)' : '<svg class="ic"><use href="#i-scan"/></svg>Lokal OCR';
   $('modePill').className = 'pill' + (ai ? '' : ' warn');
   $('modePill').title = ai ? 'Kvitton läses av med Claude' : 'Lägg in en API-nyckel under inställningar för bättre avläsning';
 }
@@ -468,26 +621,30 @@ function labelForNums(nums) {
 }
 function renderAttachments() {
   const el = $('attachList');
-  if (!attachments.length) { el.innerHTML = '<div class="empty">Inga kvitton ännu. Fota eller välj en fil.</div>'; return; }
+  if (!attachments.length) { el.innerHTML = '<div class="empty">Inga kvitton ännu. Fota eller välj en fil, så läses den av automatiskt.</div>'; return; }
   el.innerHTML = attachments.map((a) => {
     const nums = bilagaNumbersFor(a);
     let st = '';
     if (a.status === 'processing') st = `<span class="badge busy">${esc(a.statusText || 'Läser av…')}</span><div class="progress"><div style="width:${Math.round((a.progress || 0) * 100)}%"></div></div>`;
-    else if (a.status === 'error') st = `<span class="badge bad">Fel</span> <span class="small">${esc(a.statusText || '')}</span>`;
+    else if (a.status === 'error') st = `<span class="badge bad">Fel</span> <span class="tiny muted">${esc(a.statusText || '')}</span>`;
     else if (a.status === 'done') {
-      const src = a.extraction?.source === 'ai' ? 'AI' : 'lokal OCR';
+      const src = a.extraction?.source === 'ai' ? 'AI' : 'Lokal OCR';
       const n = a.extraction?.receipts?.length || 0;
-      st = `<span class="badge ok">Avläst (${src})</span> <span class="small muted">${n} kvitto${n === 1 ? '' : 'n'}${a.extraction?.fallbackReason ? ' · ' + esc(a.extraction.fallbackReason) : ''}</span>`;
+      st = `<span class="badge ok"><svg class="ic xs"><use href="#i-check"/></svg>${src}</span> <span class="tiny muted">${n} kvitto${n === 1 ? '' : 'n'}${a.extraction?.fallbackReason ? ' · ' + esc(a.extraction.fallbackReason) : ''}</span>`;
     } else st = '<span class="badge">Väntar</span>';
     return `<div class="att" data-id="${a.id}">
-      ${a.thumb ? `<img class="thumb" src="${a.thumb}" alt="" data-act="view">` : '<div class="thumb ph">📄</div>'}
-      <div><div class="name">${esc(a.name)}</div><div class="st">${st}</div>
-        <div class="bils">${nums.map((n) => `<span class="num">${n}</span>`).join('')}${nums.length ? '' : '<span class="tiny muted">Ingen rad kopplad</span>'}</div></div>
-      <div class="ops"><button class="btn small" data-act="redo">Läs av igen</button><button class="btn small danger" data-act="del">Ta bort</button></div>
+      <div class="thumbwrap" data-act="view" title="Visa">${a.thumb ? `<img src="${a.thumb}" alt="">` : '<svg class="ic ph"><use href="#i-doc"/></svg>'}
+        <div class="nums">${nums.map((n) => `<span class="num">${n}</span>`).join('')}</div></div>
+      <div class="body">
+        <div class="name" title="${esc(a.name)}">${esc(a.name)}</div>
+        <div class="st">${st}</div>
+        ${nums.length ? '' : '<div class="tiny muted">Ingen rad kopplad</div>'}
+        <div class="ops"><button class="btn small" data-act="redo" title="Läs av igen"><svg class="ic"><use href="#i-refresh"/></svg>Läs av igen</button><button class="btn small icon danger" data-act="del" title="Ta bort"><svg class="ic"><use href="#i-trash"/></svg></button></div>
+      </div>
     </div>`;
   }).join('');
-  el.querySelectorAll('[data-act]').forEach((b) => b.onclick = (e) => {
-    const id = e.target.closest('.att').dataset.id; const att = attachments.find((a) => a.id === id);
+  el.querySelectorAll('[data-act]').forEach((b) => b.onclick = () => {
+    const id = b.closest('.att').dataset.id; const att = attachments.find((a) => a.id === id);
     if (b.dataset.act === 'del') deleteAttachment(att);
     else if (b.dataset.act === 'redo') { att.rerun = true; processAttachment(att); }
     else if (b.dataset.act === 'view') viewAttachment(att);
@@ -967,11 +1124,11 @@ function renderRows() {
     const badge = r.auto ? (r.confidence === 'high' ? '<span class="badge ok">Auto</span>' : '<span class="badge warn">Kontrollera</span>') : '';
     return `<div class="row-card ${r.auto && r.confidence !== 'high' ? 'auto' : ''}" data-row="${r.id}">
       <div class="rh"><span class="num">${i + 1}</span>
-        ${att ? `<span class="small muted">${esc(att.name)}${(att.pages?.length || 0) > 1 ? ' · sida ' + ((r.page || 0) + 1) : ''}</span>` : '<span class="small muted">Utan kvitto</span>'}
+        <span class="src">${att ? esc(att.name) + ((att.pages?.length || 0) > 1 ? ' · sida ' + ((r.page || 0) + 1) : '') : 'Utan kvitto'}</span>
         ${badge}<span class="sp"></span>
-        <button class="btn small" data-act="up" title="Flytta upp" ${i === 0 ? 'disabled' : ''}>▲</button>
-        <button class="btn small" data-act="down" title="Flytta ner" ${i === current.rows.length - 1 ? 'disabled' : ''}>▼</button>
-        <button class="btn small danger" data-act="del">Ta bort</button></div>
+        <button class="btn small icon" data-act="up" title="Flytta upp" ${i === 0 ? 'disabled' : ''}><svg class="ic"><use href="#i-up"/></svg></button>
+        <button class="btn small icon" data-act="down" title="Flytta ner" ${i === current.rows.length - 1 ? 'disabled' : ''}><svg class="ic"><use href="#i-down"/></svg></button>
+        <button class="btn small icon danger" data-act="del" title="Ta bort raden"><svg class="ic"><use href="#i-trash"/></svg></button></div>
       <div class="rgrid">
         <div class="field"><label>Datum</label><input type="date" data-f="date" value="${esc(r.date)}"></div>
         <div class="field"><label>Totalbelopp SEK</label><input class="amount" inputmode="decimal" data-f="total" value="${fmtInput(r.total)}"></div>
@@ -1199,7 +1356,7 @@ function drawForm(page, top, res, nRows) {
 async function generatePdf() {
   if (!current) return;
   if (attachments.some((a) => a.status === 'processing' || a.status === 'pending')) { toast('Vänta tills alla kvitton är avlästa', 'bad'); return; }
-  const btn = $('btnPdf'); btn.disabled = true; btn.textContent = 'Skapar PDF…';
+  const btn = $('btnPdf'), lbl = btn.querySelector('span'); btn.disabled = true; lbl.textContent = 'Skapar PDF…';
   try {
     const bytes = await buildPdf();
     const blob = new Blob([bytes], { type: 'application/pdf' });
@@ -1213,7 +1370,7 @@ async function generatePdf() {
     screenStack.push(['scrReport', current.title]);
     showScreen('scrPreview', 'Färdig PDF');
   } catch (e) { console.error(e); toast('Kunde inte skapa PDF: ' + e.message, 'bad'); }
-  finally { btn.disabled = false; btn.textContent = '📄 Skapa PDF'; }
+  finally { btn.disabled = false; lbl.textContent = 'Skapa PDF'; }
 }
 $('btnPdf').onclick = generatePdf;
 $('btnDownload').onclick = () => { if (!lastPdf) return; const a = document.createElement('a'); a.href = lastPdf.url; a.download = lastPdf.name; document.body.appendChild(a); a.click(); a.remove(); };
@@ -1365,11 +1522,16 @@ $('btnOcrDl').onclick = async () => {
 
 // ---------- Navigation ----------
 $('btnNewReport').onclick = newReport;
-$('btnSettings').onclick = () => {
+$('btnNewReportTop').onclick = newReport;
+$('btnNewReportSide').onclick = newReport;
+function openSettings() {
   const activeId = document.querySelector('.screen.active').id;
+  if (activeId === 'scrSettings') return;
   screenStack.push([activeId, $('topTitle').textContent]);
   renderSettings(); showScreen('scrSettings', 'Inställningar');
-};
+}
+$('btnSettings').onclick = openSettings;
+$('btnSettingsSide').onclick = openSettings;
 $('btnBack').onclick = async () => {
   const activeId = document.querySelector('.screen.active').id;
   const prev = screenStack.pop();
@@ -1380,8 +1542,8 @@ $('btnBack').onclick = async () => {
 
 // ---------- Start ----------
 (async () => {
-  $('appVersion').textContent = $('appVersion2').textContent = `Utläggsappen v${APP_VERSION} · ${APP_BUILD}`;
-  $('aiHint').textContent = settings.apiKey ? ' Kvitton läses av med AI (Claude).' : ' Tips: lägg in en API-nyckel under ⚙ för bättre avläsning av kvitton.';
+  for (const id of ['appVersion', 'appVersion2', 'appVersionSide']) $(id).textContent = `Utläggsappen v${APP_VERSION} · ${APP_BUILD}`;
+  $('aiHint').textContent = settings.apiKey ? 'Kvitton läses av med AI (Claude).' : 'Tips: lägg in en API-nyckel under Inställningar för bättre avläsning av kvitton.';
   try { await loadReports(); } catch (e) { console.error(e); toast('Kunde inte öppna databasen: ' + e.message, 'bad'); }
   renderReports();
   if ('serviceWorker' in navigator && location.protocol !== 'file:') {

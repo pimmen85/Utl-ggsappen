@@ -1,7 +1,7 @@
 // Service worker för Utläggsappen.
 // CACHE höjs i takt med APP_VERSION i index.html så att gamla filer rensas
 // när en ny version publiceras.
-const CACHE = 'utlaggsappen-v1.0';
+const CACHE = 'utlaggsappen-v1.1';
 
 // Filer som hämtas direkt vid installation så att appen fungerar offline.
 // OCR-filerna (vendor/tesseract/*) är stora och cachas först när de används,
