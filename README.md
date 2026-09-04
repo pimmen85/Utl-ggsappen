@@ -44,9 +44,10 @@ vendor/               pdf-lib, pdf.js, fflate, Tesseract.js (+ svensk språkfil)
 
 ## Publicera (GitHub Pages)
 
-Repot ska ligga på GitHub. Under **Settings → Pages** välj *Deploy from a branch*,
-branch `main`, mapp `/ (root)`. Appen nås sedan på
-`https://<användare>.github.io/utlaggsappen/`. Lägg till den på hemskärmen i mobilen.
+Repot ligger på GitHub: https://github.com/pimmen85/Utl-ggsappen. Under
+**Settings → Pages** välj *Deploy from a branch*, branch `main`, mapp `/ (root)`.
+Appen nås sedan på `https://pimmen85.github.io/Utl-ggsappen/`. Lägg till den på
+hemskärmen i mobilen (Dela → Lägg till på hemskärmen).
 
 Höj `APP_VERSION` i `index.html` och `CACHE` i `sw.js` vid varje publicerad ändring.
 
