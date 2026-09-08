@@ -183,6 +183,13 @@ input.amount{text-align:right;font-variant-numeric:tabular-nums}
 .rows{display:flex;flex-direction:column;gap:10px}
 .row-card{border:.5px solid var(--hair);border-radius:12px;padding:12px 14px;background:var(--card);box-shadow:var(--shadow-card)}
 .row-card.auto{background:color-mix(in srgb,var(--warn-bg) 45%,var(--card))}
+.row-card.mismatch{background:color-mix(in srgb,var(--bad-bg) 40%,var(--card))}
+.rowmsg{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px;font-size:12.5px;color:var(--bad)}
+.warnbox{display:flex;align-items:center;gap:10px;flex-wrap:wrap;border:.5px solid var(--bad);background:var(--bad-bg);color:var(--bad);border-radius:12px;padding:10px 12px;font-size:13px;margin-bottom:12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+#btnSyncTop.busy svg{animation:spin 1s linear infinite}
+#btnSyncTop.bad{color:var(--bad)}
+@media (prefers-reduced-motion:reduce){#btnSyncTop.busy svg{animation:none;opacity:.5}}
 .row-card .rh{display:flex;align-items:center;gap:8px;margin-bottom:10px}
 .row-card .rh .src{flex:0 1 auto;min-width:0;font-size:12.5px;color:var(--text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .row-card .rh .sp{flex:1 0 0}
@@ -257,7 +264,7 @@ dialog h3{margin:0 0 4px;font-size:16px;font-weight:650}
     <header class="toolbar">
       <div class="tb-side"><button class="tbtn" id="btnBack" title="Tillbaka" hidden><svg class="ic"><use href="#i-back"/></svg></button></div>
       <h1 id="topTitle">Utläggsappen</h1>
-      <div class="tb-side r"><button class="tbtn" id="btnSettings" title="Inställningar"><svg class="ic"><use href="#i-gear"/></svg></button></div>
+      <div class="tb-side r"><button class="tbtn" id="btnSyncTop" title="Synka" hidden><svg class="ic"><use href="#i-refresh"/></svg></button><button class="tbtn" id="btnSettings" title="Inställningar"><svg class="ic"><use href="#i-gear"/></svg></button></div>
     </header>
 
     <main>
@@ -284,6 +291,7 @@ dialog h3{margin:0 0 4px;font-size:16px;font-weight:650}
 
       <!-- ── RAPPORT ── -->
       <section id="scrReport" class="screen">
+        <div class="warnbox" id="remoteBar" hidden></div>
         <div class="card">
           <h2>Uppgifter</h2>
           <div class="field"><label for="rTitle">Rapportens namn</label><input id="rTitle" data-r="title" placeholder="t.ex. Augusti 2026"></div>
@@ -303,6 +311,8 @@ dialog h3{margin:0 0 4px;font-size:16px;font-weight:650}
           </div>
           <input type="file" id="camInput" accept="image/*" capture="environment" class="hidden">
           <input type="file" id="fileInput" accept="image/*,application/pdf,.pdf,.heic,.heif" multiple class="hidden">
+          <input type="file" id="importInput" accept=".json,application/json" class="hidden">
+          <div class="warnbox" id="attWarn" hidden></div>
           <p class="sub" style="margin:12px 0 14px">Varje kvitto blir en rad nedan. Belopp, moms, datum och beskrivning läses av automatiskt. Kontrollera och rätta vid behov.</p>
           <div id="attachList" class="gallery"></div>
         </div>
@@ -312,7 +322,7 @@ dialog h3{margin:0 0 4px;font-size:16px;font-weight:650}
           <div id="rowList" class="rows"></div>
           <div class="sumbar">
             <span class="lbl">Totalt belopp att utbetala</span><span class="big"><span id="sumTotal">0,00</span> kr</span>
-            <span class="vat">varav moms <span id="sumVat">0,00</span> kr</span>
+            <span class="vat">varav moms <span id="sumVat">0,00</span> kr · utan moms <span id="sumNet">0,00</span> kr<span id="sumNetMiss"></span></span>
           </div>
         </div>
 
@@ -322,6 +332,7 @@ dialog h3{margin:0 0 4px;font-size:16px;font-weight:650}
             <button class="btn primary" id="btnPdf"><svg class="ic"><use href="#i-doc"/></svg><span>Skapa PDF</span></button>
             <button class="btn" id="btnXlsx"><svg class="ic"><use href="#i-table"/></svg>Ladda ner Excel</button>
             <button class="btn" id="btnSign"><svg class="ic"><use href="#i-pen"/></svg>Signatur</button>
+            <button class="btn" id="btnExport"><svg class="ic"><use href="#i-download"/></svg>Exportera rapport</button>
             <button class="btn danger" id="btnDeleteReport" style="margin-left:auto"><svg class="ic"><use href="#i-trash"/></svg>Ta bort rapport</button>
           </div>
           <p class="sub" style="margin:12px 0 0" id="signHint"></p>
@@ -340,6 +351,31 @@ dialog h3{margin:0 0 4px;font-size:16px;font-weight:650}
           <div class="form-row"><label for="sProject">Projekt</label><input class="ctl" id="sProject" data-s="project"></div>
           <div class="form-row"><label for="sKst">Kst</label><input class="ctl" id="sKst" data-s="kst"></div>
           <div class="form-row"><label for="sAccount">Konto</label><input class="ctl" id="sAccount" data-s="account"></div>
+        </div>
+
+        <div class="card">
+          <h2>Synk mellan enheter</h2>
+          <p class="sub">Rapporterna (uppgifter och rader) sparas som en fil per rapport i mappen <b>Utläggsappen</b> på din egen Google Drive, så att samma rapport finns på både mobilen och datorn. <b>Kvittona synkas inte</b> – de ligger kvar på enheten där de lades till. Ingenting skickas någon annanstans, och API-nyckeln synkas aldrig.</p>
+          <div class="form-row"><label for="sGoogleId">Klient-ID</label><input class="ctl" id="sGoogleId" data-s="gDriveClientId" autocomplete="off" placeholder="…apps.googleusercontent.com"></div>
+          <div class="form-row"><label for="sDevice">Enhetens namn</label><input class="ctl" id="sDevice" data-s="deviceName" placeholder="t.ex. iPhone"></div>
+          <div class="actions" style="margin-top:10px">
+            <button class="btn primary" id="btnGConnect"><svg class="ic"><use href="#i-key"/></svg>Anslut Google</button>
+            <button class="btn" id="btnGSync" hidden><svg class="ic"><use href="#i-refresh"/></svg>Synka nu</button>
+            <button class="btn" id="btnImport"><svg class="ic"><use href="#i-clip"/></svg>Importera rapport</button>
+            <button class="btn danger" id="btnGDisconnect" hidden>Koppla från</button>
+          </div>
+          <p class="small muted" id="gStatus" style="margin:10px 0 0"></p>
+          <details style="margin-top:12px">
+            <summary class="small muted">Så skaffar du ett klient-ID (en gång)</summary>
+            <ol class="small muted" style="margin:10px 0 0;padding-left:20px;line-height:1.7">
+              <li>Gå till <b>console.cloud.google.com</b> och skapa ett projekt, t.ex. <i>Utläggsappen</i>.</li>
+              <li><b>APIs &amp; Services → Library</b>: sök upp <b>Google Drive API</b> och tryck <b>Enable</b>.</li>
+              <li>Fyll i <b>OAuth consent screen</b>: appnamn, din e-post, målgrupp <b>External</b>. Lägg till din egen Google-adress som testanvändare.</li>
+              <li>Under <b>Data access</b>, lägg till behörigheten <code>drive.file</code> (appen ser bara sina egna filer).</li>
+              <li><b>Credentials → Create credentials → OAuth client ID</b>, typ <b>Web application</b>. Under <i>Authorized JavaScript origins</i> lägger du in exakt <code id="originHint"></code> (bara adressen, ingen sökväg). Lämna redirect-URI:er tomma.</li>
+              <li>Kopiera klient-ID:t hit och tryck <b>Anslut Google</b>. Gör samma sak på nästa enhet med <i>samma</i> klient-ID och <i>samma</i> Google-konto.</li>
+            </ol>
+          </details>
         </div>
 
         <div class="card">
@@ -423,8 +459,8 @@ import * as pdfjsLib from './vendor/pdfjs/pdf.min.mjs';
 
 // Höjs vid varje publicerad ändring, så man kan se om enheten har senaste bygget.
 // Höj även CACHE i sw.js.
-const APP_VERSION = '1.1';
-const APP_BUILD = '2026-09-04';
+const APP_VERSION = '1.2';
+const APP_BUILD = '2026-09-08';
 
 const $ = (id) => document.getElementById(id);
 const BASE = new URL('./', location.href).href;
@@ -438,6 +474,7 @@ const SETTINGS_KEY = 'utlaggsappen.settings';
 const DEFAULT_SETTINGS = {
   name: '', employeeNo: '', company: 'Midroc Mechanical AB', purpose: 'Utlägg', destination: '',
   project: '', kst: '', account: '', apiKey: '', aiModel: 'claude-opus-5', signature: '',
+  gDriveClientId: '', deviceName: '',
 };
 let settings = loadSettings();
 function loadSettings() {
@@ -505,7 +542,7 @@ function canvasToBlob(c, type = 'image/jpeg', q = 0.85) { return new Promise((re
 function loadImg(url) { return new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error('Bilden kunde inte läsas (HEIC stöds inte av webbläsaren – välj JPEG i kamerainställningarna)')); i.src = url; }); }
 function loadScript(src) { return new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = () => rej(new Error('Kunde inte ladda ' + src)); document.head.appendChild(s); }); }
 function safeFileName(s) { return String(s || 'utlagg').replace(/[\\/:*?"<>|]+/g, '-').trim(); }
-const debounce = (fn, ms) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
+const debounce = (fn, ms) => { let t; const w = (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; w.flush = () => { clearTimeout(t); fn(); }; return w; };
 
 // ---------- Tillstånd ----------
 let reports = [];
@@ -534,9 +571,30 @@ async function loadReports() {
   reports = (await dbAll('reports')).sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
 }
 function reportTotals(r) {
-  let total = 0, vat = 0;
-  for (const row of r.rows || []) { total += Number(row.total) || 0; vat += Number(row.vat) || 0; }
-  return { total: round2(total), vat: round2(vat) };
+  let total = 0, vat = 0, net = 0, netUnknown = 0;
+  for (const row of r.rows || []) {
+    total += Number(row.total) || 0; vat += Number(row.vat) || 0;
+    const n = rowNet(row);
+    if (n === null) netUnknown++; else net += n;
+  }
+  return { total: round2(total), vat: round2(vat), net: round2(net), netUnknown };
+}
+// Kostnaden utan moms för en rad: avläst från kvittot när den står där, annars total minus moms.
+function rowNet(row) {
+  if (row.net !== null && row.net !== undefined && row.net !== '' && !isNaN(row.net)) return Number(row.net);
+  if (row.total !== null && row.total !== undefined && row.vat !== null && row.vat !== undefined) return round2(Number(row.total) - Number(row.vat));
+  return null;
+}
+// Rapporter skapade före netto-fältet: fyll i det som går att räkna fram.
+function migrateRows(r) {
+  for (const row of (r && r.rows) || []) {
+    if (row.net === undefined) {
+      row.net = (row.total !== null && row.total !== undefined && row.vat !== null && row.vat !== undefined)
+        ? round2(Number(row.total) - Number(row.vat)) : null;
+      row.netSource = row.net === null ? null : 'derived';
+    }
+  }
+  return r;
 }
 function renderReports() {
   const items = reports.map((r) => ({ r, t: reportTotals(r), date: new Date(r.updatedAt || r.createdAt).toLocaleDateString('sv-SE') }));
@@ -566,6 +624,8 @@ async function openReport(id) {
   current = await dbGet('reports', id);
   if (!current) { toast('Rapporten hittades inte', 'bad'); return; }
   current.rows = current.rows || [];
+  migrateRows(current);
+  $('remoteBar').hidden = true;
   attachments = (await dbByIndex('attachments', 'reportId', id)).sort((a, b) => a.order - b.order);
   for (const k of ['title', 'name', 'employeeNo', 'purpose', 'destination']) {
     const inp = document.querySelector(`[data-r="${k}"]`); inp.value = current[k] || '';
@@ -576,6 +636,9 @@ async function openReport(id) {
 const saveReport = debounce(async () => {
   if (!current) return;
   current.updatedAt = Date.now();
+  // Bilagornas namn följer med i synken (inte bilderna), så att den andra
+  // enheten kan varna för att kvittona ligger kvar här.
+  current.attachmentsMeta = mergeMeta(current.attachmentsMeta, metaForAttachments(attachments));
   await dbPut('reports', current);
   // Kom ihåg standardvärden
   let changed = false;
@@ -586,6 +649,7 @@ const saveReport = debounce(async () => {
   const idx = reports.findIndex((r) => r.id === current.id); if (idx >= 0) reports[idx] = current;
   $('topTitle').textContent = current.title || 'Rapport';
   renderReports();
+  scheduleSync();
 }, 350);
 
 document.querySelectorAll('[data-r]').forEach((inp) => inp.addEventListener('input', () => {
@@ -602,6 +666,8 @@ function renderMode() {
 function renderSums() {
   const t = reportTotals(current);
   $('sumTotal').textContent = fmtAmount(t.total); $('sumVat').textContent = fmtAmount(t.vat);
+  $('sumNet').textContent = fmtAmount(t.net);
+  $('sumNetMiss').textContent = t.netUnknown ? ` · utan moms saknas för ${t.netUnknown} rad${t.netUnknown === 1 ? '' : 'er'}` : '';
 }
 function renderSignHint() {
   $('signHint').textContent = settings.signature ? 'Din signatur ritas in i Sign-fältet. Attest görs av chefen efteråt.' : 'Ingen signatur sparad – PDF:en får tomt Sign-fält (rita en under Signatur).';
@@ -619,7 +685,18 @@ function labelForNums(nums) {
   if (s.length > 1 && s[s.length - 1] - s[0] === s.length - 1) return `${s[0]}–${s[s.length - 1]}`;
   return s.join(', ');
 }
+// Bilagor som lades till på en annan enhet – de finns i synken men inte här.
+function missingAttachments() {
+  return ((current && current.attachmentsMeta) || []).filter((m) => !attachments.some((a) => a.id === m.id));
+}
+function renderAttWarn() {
+  const el = $('attWarn'); if (!el) return;
+  const miss = missingAttachments();
+  el.hidden = !miss.length;
+  if (miss.length) el.innerHTML = `<span>${miss.length} bilag${miss.length === 1 ? 'a lades' : 'or lades'} till på en annan enhet (${miss.map((m) => esc(m.name)).join(', ')}) och finns inte här. En PDF som skapas på den här enheten får med raderna men inte bilderna.</span>`;
+}
 function renderAttachments() {
+  renderAttWarn();
   const el = $('attachList');
   if (!attachments.length) { el.innerHTML = '<div class="empty">Inga kvitton ännu. Fota eller välj en fil, så läses den av automatiskt.</div>'; return; }
   el.innerHTML = attachments.map((a) => {
@@ -733,6 +810,7 @@ function applyExtraction(att, result) {
   for (const rc of receipts) {
     addRow({
       attachmentId: att.id, page: rc.page || 0, date: rc.date || '', total: rc.total ?? null, vat: rc.vat ?? null,
+      net: rc.net ?? null, netSource: rc.netSource ?? null,
       localAmount: rc.total ?? null, description: rc.description || '', auto: true, confidence: rc.confidence || 'medium',
       currency: rc.currency || 'SEK', merchant: rc.merchant || '',
     });
@@ -803,18 +881,21 @@ async function makeThumb(pg) {
 // ---------- AI-läsning (Claude) ----------
 const AI_SYSTEM = `Du läser kvitton åt en anställd som ska fylla i en svensk utläggsredovisning.
 Du får en bilaga (foto, skanning eller PDF) som kan innehålla ett eller flera kvitton, ibland på flera sidor.
-Hitta varje enskilt kvitto och ange för varje kvitto:
+Hitta varje enskilt kvitto och ange för varje kvitto. Returnera kvittona i läsordning: uppifrån och ned, och kvitton som ligger bredvid varandra från vänster till höger.
+För varje kvitto anger du:
 - page: sidnummer i bilagan där kvittot finns (1 för första sidan)
 - date: köp-/betaldatum som ÅÅÅÅ-MM-DD (null om det inte går att läsa)
 - merchant: butik eller leverantör
 - total_incl_vat: totalbeloppet som faktiskt betalades, inklusive moms
 - vat_amount: momsbeloppet totalt (summan om flera momssatser; 0 om kvittot anger att moms saknas; null om det inte framgår)
+- net_excl_vat: nettobeloppet exklusive moms (summan av alla nettodelar om kvittot har flera momssatser; null om det varken står på kvittot eller går att räkna ut)
 - currency: valutakod, t.ex. SEK
 - description: kort beskrivning på svenska i samma stil som en utläggsblankett, t.ex. "Drivmedel hyrbil", "Parkering på hotellet", "Laddning hyrbil", "Kontorsmateriel", "Tågbiljett Göteborg–Stockholm"
 - category: en av ${CATEGORIES.join(', ')}
 - confidence: 0–1, hur säker du är på belopp och datum
 - notes: kort anmärkning om något är oklart, annars null
-Blanda inte ihop nettobelopp med totalbelopp. Om samma köp förekommer två gånger (t.ex. kortkvitto och kassakvitto) returneras det bara en gång. Returnera en tom lista om bilagan inte innehåller något kvitto. Använd punkt som decimaltecken i tal.`;
+Blanda inte ihop nettobelopp med totalbelopp. Om samma köp förekommer två gånger (t.ex. kortkvitto och kassakvitto) returneras det bara en gång. Returnera en tom lista om bilagan inte innehåller något kvitto. Använd punkt som decimaltecken i tal.
+Beloppen ska hänga ihop: net_excl_vat + vat_amount = total_incl_vat. Många svenska kvitton har en momsspecifikation längst ned, t.ex. "MOMS% BRUTTO MOMS NETTO / 25.0% 199.90 39.98 159.92" – läs nettot därifrån när den finns. Står bara två av de tre beloppen räknar du ut det tredje. Anger kvittot uttryckligen att moms saknas sätter du vat_amount till 0 och net_excl_vat till samma belopp som total_incl_vat. Går momsen inte att utläsa alls sätter du både vat_amount och net_excl_vat till null – gissa aldrig en momssats.`;
 
 const nullable = (t) => ({ anyOf: [{ type: t }, { type: 'null' }] });
 const RECEIPT_SCHEMA = {
@@ -826,11 +907,11 @@ const RECEIPT_SCHEMA = {
         type: 'object',
         properties: {
           page: { type: 'integer' }, date: nullable('string'), merchant: nullable('string'),
-          total_incl_vat: nullable('number'), vat_amount: nullable('number'), currency: nullable('string'),
+          total_incl_vat: nullable('number'), vat_amount: nullable('number'), net_excl_vat: nullable('number'), currency: nullable('string'),
           description: { type: 'string' }, category: { type: 'string', enum: CATEGORIES },
           confidence: { type: 'number' }, notes: nullable('string'),
         },
-        required: ['page', 'date', 'merchant', 'total_incl_vat', 'vat_amount', 'currency', 'description', 'category', 'confidence', 'notes'],
+        required: ['page', 'date', 'merchant', 'total_incl_vat', 'vat_amount', 'net_excl_vat', 'currency', 'description', 'category', 'confidence', 'notes'],
         additionalProperties: false,
       },
     },
@@ -869,9 +950,10 @@ async function aiExtract(att) {
   if (msg.stop_reason === 'max_tokens') throw new Error('AI-svaret blev avklippt');
   const text = (msg.content || []).filter((b) => b.type === 'text').map((b) => b.text).join('');
   const parsed = JSON.parse(text);
-  const receipts = (parsed.receipts || []).map((r) => ({
+  const receipts = (parsed.receipts || []).map((r) => reconcileAmounts({
     page: Math.max(0, (r.page || 1) - 1), date: normDate(r.date), merchant: r.merchant || '',
     total: r.total_incl_vat == null ? null : round2(r.total_incl_vat), vat: r.vat_amount == null ? null : round2(r.vat_amount),
+    net: r.net_excl_vat == null ? null : round2(r.net_excl_vat),
     currency: r.currency || 'SEK', description: r.description || r.category || '', category: r.category,
     confidence: r.confidence >= 0.85 ? 'high' : r.confidence >= 0.5 ? 'medium' : 'low', notes: r.notes,
   }));
@@ -1051,6 +1133,104 @@ function findVat(lines, total) {
   });
   return best;
 }
+const VAT_RATES = [0.25, 0.12, 0.06];
+// Stämmer momsbeloppet med någon svensk momssats räknad på totalen?
+function impliedRateOk(total, vat) {
+  if (total == null || vat == null || total <= 0 || vat <= 0) return false;
+  return VAT_RATES.some((r) => {
+    const exp = total * r / (1 + r);
+    return Math.abs(vat - exp) <= Math.max(0.06, exp * 0.02);
+  });
+}
+// Momsspecifikationen som många kvitton har längst ned, t.ex.
+//   MOMS%   BRUTTO   MOMS    NETTO
+//   25.0%   199.90   39.98   159.92
+// Ger netto och moms direkt, och klarar flera momssatser på samma kvitto.
+const RATE_RE = /(\d{1,2})(?:[.,]\d{1,2})?\s*%/;
+function findRateBreakdown(lines, total) {
+  let net = 0, vat = 0, gross = 0, hits = 0;
+  for (const l of lines) {
+    const rm = RATE_RE.exec(l); if (!rm) continue;
+    const r = Number(rm[1]) / 100;
+    if (!VAT_RATES.some((x) => Math.abs(x - r) < 0.005)) continue;
+    const am = amountsIn(l); if (am.length < 2) continue;
+    // Hitta paret (netto, moms) där moms = netto × momssatsen
+    let best = null;
+    for (const n of am) for (const v of am) {
+      if (n === v || n <= 0 || v <= 0) continue;
+      const exp = n * r;
+      if (Math.abs(v - exp) > Math.max(0.06, exp * 0.02)) continue;
+      const sum = round2(n + v);
+      const gm = am.find((a) => Math.abs(a - sum) <= 0.02);
+      const score = gm === undefined ? 0 : 1;
+      if (!best || score > best.score || (score === best.score && n > best.n)) best = { n, v, g: gm === undefined ? sum : gm, score };
+    }
+    if (!best) continue;
+    net += best.n; vat += best.v; gross += best.g; hits++;
+  }
+  if (!hits) return null;
+  net = round2(net); vat = round2(vat); gross = round2(gross);
+  // Bara trovärdig om specifikationens brutto stämmer med kvittots total
+  if (total != null && Math.abs(gross - total) > 0.5) return null;
+  return { net, vat, gross };
+}
+// Kvitton utan momstabell skriver ibland ut nettot på en egen rad.
+const NET_KW = /(netto|exkl\.?\s*moms|ex\.?\s*moms|excl\.?\s*(vat|moms)|utan moms|f\u00f6re moms|net amount|subtotal|delsumma)/i;
+function findNet(lines, total, vat) {
+  if (total == null) return null;
+  let best = null;
+  for (const l of lines) {
+    if (!NET_KW.test(l)) continue;
+    for (const a of amountsIn(l)) {
+      if (a <= 0 || a >= total) continue;
+      // Godta bara belopp som faktiskt hänger ihop med totalen, annars fångar
+      // en lös "Delsumma"-rad på ett kvitto med rabatter fel siffra.
+      const ok = vat != null ? Math.abs(a + vat - total) <= 0.02
+        : VAT_RATES.some((r) => Math.abs((total - a) / a - r) <= r * 0.01);
+      if (ok && (best === null || a > best)) best = a;
+    }
+  }
+  return best;
+}
+// Öresavrundning: momsspecifikationens brutto och beloppet som faktiskt drogs
+// kan skilja upp till 50 öre utan att något är fel.
+const NET_TOL = 0.02, NET_TOL_RECEIPT = 0.5;
+function amountState(row) {
+  const n = (v) => (v === null || v === undefined || v === '' || isNaN(v)) ? null : Number(v);
+  const total = n(row.total), vat = n(row.vat), net = n(row.net);
+  if (total === null) return 'empty';
+  if (vat === null && net === null) return 'unknown';
+  if (vat === null || net === null) return 'partial';
+  if (vat === 0 && Math.abs(net - total) <= NET_TOL) return 'novat';
+  const tol = row.netSource === 'receipt' ? NET_TOL_RECEIPT : NET_TOL;
+  return Math.abs(net + vat - total) <= tol ? 'ok' : 'mismatch';
+}
+// Fyller i det tredje beloppet när två är kända och sänker träffsäkerheten när
+// de tre inte går ihop. Gissar aldrig en momssats – 25 % är fel för mat (12 %),
+// resor (6 %) och momsfria köp.
+function reconcileAmounts(o) {
+  const has = (v) => v !== null && v !== undefined && v !== '' && !isNaN(v);
+  let total = has(o.total) ? Number(o.total) : null;
+  let vat = has(o.vat) ? Number(o.vat) : null;
+  let net = has(o.net) ? Number(o.net) : null;
+  const gross = has(o.grossFromBreakdown) ? Number(o.grossFromBreakdown) : null;
+  let netSource = o.netSource || (net === null ? null : 'receipt');
+  let confidence = o.confidence;
+
+  if (total !== null && vat !== null && net === null) { net = round2(total - vat); netSource = 'derived'; }
+  else if (total !== null && net !== null && vat === null) vat = round2(total - net);
+  else if (total === null && net !== null && vat !== null) total = round2(net + vat);
+
+  if (total !== null && vat !== null && net !== null) {
+    const ref = gross === null ? total : gross;
+    if (Math.abs(net + vat - ref) > NET_TOL) {
+      if (impliedRateOk(total, vat)) { net = round2(total - vat); netSource = 'derived'; }
+      else confidence = 'low';
+    } else if (confidence === 'medium' && netSource === 'receipt') confidence = 'high';
+  }
+  return { ...o, total, vat, net, netSource, confidence };
+}
+
 const DATE_RES = [
   { re: /\b(20\d{2})[-./](\d{1,2})[-./](\d{1,2})\b/g, f: (m) => [m[1], m[2], m[3]] },
   { re: /\b(20\d{2})(\d{2})(\d{2})\b/g, f: (m) => [m[1], m[2], m[3]] },
@@ -1097,19 +1277,31 @@ function findMerchant(lines) {
 function parseReceiptText(text) {
   const lines = String(text || '').split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
   const { total, source } = findTotal(lines);
-  const vat = findVat(lines, total);
+  // Momstabellen ger både moms och netto på en gång; annars matchas momsen mot
+  // en momssats och nettot letas upp separat.
+  const bd = findRateBreakdown(lines, total);
+  const vatHit = bd ? null : findVat(lines, total);
+  const vat = bd ? bd.vat : (vatHit ? round2(vatHit.vat) : null);
+  const net = bd ? bd.net : findNet(lines, total, vat);
   const date = findDate(lines);
   const { category, description } = findCategory(lines.join('\n'));
   const merchant = findMerchant(lines);
-  const confidence = (source === 'keyword' && vat && date) ? 'high' : (total != null ? 'medium' : 'low');
+  const confidence = (source === 'keyword' && vat != null && date) ? 'high' : (total != null ? 'medium' : 'low');
   const hasTotalKeyword = lines.some((l) => TOTAL_KW.test(l));
-  return { date, total: total == null ? null : round2(total), totalSource: source, hasTotalKeyword, vat: vat ? round2(vat.vat) : null, vatRate: vat?.rate ?? null, category, description: description || category, merchant, confidence, currency: 'SEK' };
+  return reconcileAmounts({
+    date, total: total == null ? null : round2(total), totalSource: source, hasTotalKeyword,
+    vat, net, netSource: net == null ? null : 'receipt', grossFromBreakdown: bd ? bd.gross : null,
+    vatRate: bd ? null : (vatHit?.rate ?? null), category, description: description || category,
+    merchant, confidence, currency: 'SEK',
+  });
 }
 
 // ---------- Rader ----------
 function addRow(partial = {}) {
   const row = {
-    id: uid(), date: '', attachmentId: null, page: 0, total: null, vat: null, rate: null, localAmount: null,
+    // net är inte en lagrad härledning av total-vat, utan en egen avläsning från kvittot.
+    // Den finns för att upptäcka felläsningar (net + vat ska bli total) – ta inte bort den.
+    id: uid(), date: '', attachmentId: null, page: 0, total: null, vat: null, net: null, netSource: null, rate: null, localAmount: null,
     description: '', account: settings.account || '', kst: settings.kst || '', project: settings.project || '',
     auto: false, confidence: 'high', ...partial,
   };
@@ -1121,10 +1313,13 @@ function renderRows() {
   if (!current.rows.length) { el.innerHTML = '<div class="empty">Inga rader ännu.</div>'; return; }
   el.innerHTML = current.rows.map((r, i) => {
     const att = attachments.find((a) => a.id === r.attachmentId);
-    const badge = r.auto ? (r.confidence === 'high' ? '<span class="badge ok">Auto</span>' : '<span class="badge warn">Kontrollera</span>') : '';
-    return `<div class="row-card ${r.auto && r.confidence !== 'high' ? 'auto' : ''}" data-row="${r.id}">
+    const remoteAtt = !att && r.attachmentId ? ((current.attachmentsMeta || []).find((m) => m.id === r.attachmentId) || { name: 'Kvitto' }) : null;
+    const st = amountState(r);
+    const badge = (st === 'mismatch' ? '<span class="badge bad">Moms stämmer inte</span>' : st === 'novat' ? '<span class="badge">Ingen moms</span>' : '')
+      + (r.auto ? (r.confidence === 'high' ? '<span class="badge ok">Auto</span>' : '<span class="badge warn">Kontrollera</span>') : '');
+    return `<div class="row-card ${r.auto && r.confidence !== 'high' ? 'auto' : ''} ${st === 'mismatch' ? 'mismatch' : ''}" data-row="${r.id}">
       <div class="rh"><span class="num">${i + 1}</span>
-        <span class="src">${att ? esc(att.name) + ((att.pages?.length || 0) > 1 ? ' · sida ' + ((r.page || 0) + 1) : '') : 'Utan kvitto'}</span>
+        <span class="src">${att ? esc(att.name) + ((att.pages?.length || 0) > 1 ? ' · sida ' + ((r.page || 0) + 1) : '') : remoteAtt ? esc(remoteAtt.name) + ' · annan enhet' : 'Utan kvitto'}</span>
         ${badge}<span class="sp"></span>
         <button class="btn small icon" data-act="up" title="Flytta upp" ${i === 0 ? 'disabled' : ''}><svg class="ic"><use href="#i-up"/></svg></button>
         <button class="btn small icon" data-act="down" title="Flytta ner" ${i === current.rows.length - 1 ? 'disabled' : ''}><svg class="ic"><use href="#i-down"/></svg></button>
@@ -1133,40 +1328,77 @@ function renderRows() {
         <div class="field"><label>Datum</label><input type="date" data-f="date" value="${esc(r.date)}"></div>
         <div class="field"><label>Totalbelopp SEK</label><input class="amount" inputmode="decimal" data-f="total" value="${fmtInput(r.total)}"></div>
         <div class="field"><label>Varav moms</label><input class="amount" inputmode="decimal" data-f="vat" value="${fmtInput(r.vat)}"></div>
+        <div class="field"><label>Utan moms</label><input class="amount" inputmode="decimal" data-f="net" value="${fmtInput(r.net)}"></div>
         <div class="field wide"><label>Beskrivning</label><input data-f="description" list="dlDesc" value="${esc(r.description)}"></div>
         <div class="field"><label>Projekt</label><input data-f="project" value="${esc(r.project)}"></div>
         <div class="field"><label>Konto</label><input data-f="account" value="${esc(r.account)}"></div>
         <div class="field"><label>Kst</label><input data-f="kst" value="${esc(r.kst)}"></div>
         <div class="field"><label>Valutakurs</label><input class="amount" inputmode="decimal" data-f="rate" value="${r.rate == null ? '' : String(r.rate).replace('.', ',')}"></div>
         <div class="field"><label>Belopp lokal valuta</label><input class="amount" inputmode="decimal" data-f="localAmount" value="${fmtInput(r.localAmount)}"></div>
-        <div class="field"><label>Kvitto</label><select data-f="attachmentId"><option value="">–</option>${attachments.map((a) => `<option value="${a.id}" ${a.id === r.attachmentId ? 'selected' : ''}>${esc(a.name)}</option>`).join('')}</select></div>
+        <div class="field"><label>Kvitto</label><select data-f="attachmentId"><option value="">–</option>${remoteAtt ? `<option value="${r.attachmentId}" selected>${esc(remoteAtt.name)} (finns på annan enhet)</option>` : ''}${attachments.map((a) => `<option value="${a.id}" ${a.id === r.attachmentId ? 'selected' : ''}>${esc(a.name)}</option>`).join('')}</select></div>
       </div>
+      <div class="rowmsg" ${st === 'mismatch' ? '' : 'hidden'}>${rowMsgText(r)}<button class="btn small" data-act="fixnet">Räkna om utan moms</button></div>
     </div>`;
   }).join('');
+}
+function rowMsgText(r) {
+  const sum = fmtAmount(round2(Number(r.net) + Number(r.vat)));
+  return `<span>Utan moms + moms blir ${sum} kr, men totalen är ${fmtAmount(r.total)} kr.</span>`;
+}
+// Uppdaterar syskonfälten utan att rita om kortet, så markören inte hoppar.
+function refreshRowCard(card, row) {
+  for (const f of ['total', 'vat', 'net', 'localAmount']) {
+    const el = card.querySelector(`[data-f="${f}"]`);
+    if (el && el !== document.activeElement) el.value = fmtInput(row[f]);
+  }
+  const st = amountState(row);
+  card.classList.toggle('mismatch', st === 'mismatch');
+  const msg = card.querySelector('.rowmsg');
+  if (msg) { msg.hidden = st !== 'mismatch'; if (st === 'mismatch') msg.innerHTML = rowMsgText(row) + '<button class="btn small" data-act="fixnet">Räkna om utan moms</button>'; }
 }
 $('rowList').addEventListener('input', (e) => {
   const inp = e.target; const card = inp.closest('[data-row]'); if (!card) return;
   const row = current.rows.find((r) => r.id === card.dataset.row); const f = inp.dataset.f; if (!row || !f) return;
-  if (['total', 'vat', 'localAmount', 'rate'].includes(f)) row[f] = parseNum(inp.value);
+  if (['total', 'vat', 'net', 'localAmount', 'rate'].includes(f)) row[f] = parseNum(inp.value);
   else row[f] = inp.value;
+  // Fyll i det tredje beloppet när två är ifyllda. Att tömma ett fält härleder
+  // aldrig något – annars går fältet inte att rensa.
+  const known = (v) => v !== null && v !== undefined && !isNaN(v);
+  if (f === 'total' && known(row.total)) {
+    if (known(row.vat)) { row.net = round2(row.total - row.vat); row.netSource = 'derived'; }
+    else if (known(row.net)) row.vat = round2(row.total - row.net);
+  } else if (f === 'vat' && known(row.vat) && known(row.total)) {
+    row.net = round2(row.total - row.vat); row.netSource = 'derived';
+  } else if (f === 'net' && known(row.net)) {
+    row.netSource = 'user';
+    if (known(row.total)) row.vat = round2(row.total - row.net);
+    else if (known(row.vat)) row.total = round2(row.net + row.vat);
+  }
   if (f === 'total' && (row.localAmount == null || row.localAmount === row._prevTotal)) row.localAmount = row.total;
   row._prevTotal = row.total;
   if (f === 'attachmentId') row.page = 0;
   row.auto = false;
   card.classList.remove('auto');
-  const b = card.querySelector('.badge'); if (b) b.remove();
+  for (const b of card.querySelectorAll('.rh .badge.ok, .rh .badge.warn')) b.remove();
+  refreshRowCard(card, row);
   renderSums(); saveReport();
 });
 $('rowList').addEventListener('change', (e) => {
-  const inp = e.target; if (!inp.classList.contains('amount')) return;
-  const card = inp.closest('[data-row]'); const row = current.rows.find((r) => r.id === card.dataset.row); const f = inp.dataset.f;
-  if (f === 'rate') { inp.value = row.rate == null ? '' : String(row.rate).replace('.', ','); }
-  else { inp.value = fmtInput(row[f]); }
-  if (f === 'attachmentId') renderAttachments();
+  const inp = e.target; const card = inp.closest('[data-row]'); if (!card) return;
+  const row = current.rows.find((r) => r.id === card.dataset.row); const f = inp.dataset.f; if (!row || !f) return;
+  if (f === 'attachmentId') { renderAttachments(); return; }
+  if (!inp.classList.contains('amount')) return;
+  if (f === 'rate') inp.value = row.rate == null ? '' : String(row.rate).replace('.', ',');
+  else inp.value = fmtInput(row[f]);
 });
 $('rowList').addEventListener('click', (e) => {
   const b = e.target.closest('[data-act]'); if (!b) return;
   const card = b.closest('[data-row]'); const i = current.rows.findIndex((r) => r.id === card.dataset.row); if (i < 0) return;
+  if (b.dataset.act === 'fixnet') {
+    const row = current.rows[i];
+    row.net = round2(Number(row.total) - Number(row.vat)); row.netSource = 'derived';
+    saveReport(); renderReport(); return;
+  }
   if (b.dataset.act === 'del') { if (!confirm('Ta bort raden?')) return; current.rows.splice(i, 1); }
   else if (b.dataset.act === 'up' && i > 0) { [current.rows[i - 1], current.rows[i]] = [current.rows[i], current.rows[i - 1]]; }
   else if (b.dataset.act === 'down' && i < current.rows.length - 1) { [current.rows[i + 1], current.rows[i]] = [current.rows[i], current.rows[i + 1]]; }
@@ -1178,25 +1410,146 @@ $('btnAddRow').onclick = () => { addRow({ date: todayISO() }); saveReport(); ren
 const A3 = [841.89, 1190.55];
 const COLW = [13.14, 11.43, 18.71, 14.43, 11.14, 11.14, 8.71, 9.14, 16, 7.14, 5.14, 10.57, 11.71]; // Excel-kolumnbredder A–M
 const COLSUM = COLW.reduce((a, b) => a + b, 0);
-const FORM_W = 510, S = 0.6;
+const FORM_BASE_W = 510, FORM_BASE_S = 0.6;
+let FORM_W = FORM_BASE_W, S = FORM_BASE_S;
+function setFormScale(k) { FORM_W = FORM_BASE_W * k; S = FORM_BASE_S * k; }
+// Största skala där blanketten fortfarande får plats på sidan.
+function fitFormScale(nRows, maxW, maxH) {
+  let k = 1.5;
+  while (k > 0.6 && (FORM_BASE_W * k > maxW || formHeightAt(nRows, FORM_BASE_S * k) > maxH)) k -= 0.05;
+  return k;
+}
 const safeText = (t) => String(t ?? '').replace(/[–—]/g, '-').replace(/[^\x20-\x7E\xA0-\xFF‘’“”•€…]/g, '?');
 
-function formHeight(nRows) {
-  return 26 + (26.25 + 17.25 + 18 + 30.75 + 18 + 30.75 + 13.5 + 18 + 51) * S + nRows * 34.5 * S + (29.25 + 27.75 + 15.75 + 9 + 30) * S;
+function formHeightAt(nRows, s) {
+  return 26 + (26.25 + 17.25 + 18 + 30.75 + 18 + 30.75 + 13.5 + 18 + 51) * s + nRows * 34.5 * s + (29.25 + 27.75 + 15.75 + 9 + 30) * s;
 }
-function attachmentItems() {
+function formHeight(nRows) { return formHeightAt(nRows, S); }
+// Skannade ark har ofta flera kvitton bredvid varandra. Hittar de vita gatorna
+// mellan dem och beskär varje kvitto för sig, så att det blir läsbart i PDF:en.
+// Delar bara upp när antalet spalter stämmer med antalet avlästa kvitton.
+async function detectColumns(pg, want) {
+  if (!pg || !pg.jpeg || want < 2) return null;
+  const url = URL.createObjectURL(pg.jpeg);
+  try {
+    const img = await loadImg(url);
+    const W = 900, H = Math.max(1, Math.round(img.naturalHeight * (W / img.naturalWidth)));
+    const c = document.createElement('canvas'); c.width = W; c.height = H;
+    const ctx = c.getContext('2d', { willReadFrequently: true });
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H);
+    ctx.drawImage(img, 0, 0, W, H);
+    const d = ctx.getImageData(0, 0, W, H).data;
+    const dark = new Uint8Array(W * H);
+    const colInk = new Int32Array(W);
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const i = (y * W + x) * 4;
+      if ((d[i] * 299 + d[i + 1] * 587 + d[i + 2] * 114) / 1000 < 170) { dark[y * W + x] = 1; colInk[x]++; }
+    }
+    const minInk = Math.max(2, H * 0.006);
+    const bands = []; let start = -1;
+    for (let x = 0; x <= W; x++) {
+      const on = x < W && colInk[x] > minInk;
+      if (on && start < 0) start = x;
+      if (!on && start >= 0) { bands.push([start, x - 1]); start = -1; }
+    }
+    // Slå ihop band som bara skiljs av en smal glipa
+    const gap = Math.max(6, Math.round(W * 0.018)); const merged = [];
+    for (const b of bands) {
+      const last = merged[merged.length - 1];
+      if (last && b[0] - last[1] - 1 < gap) last[1] = b[1]; else merged.push([...b]);
+    }
+    const cols = merged.filter((b) => b[1] - b[0] > W * 0.05);
+    if (cols.length !== want) return null;
+    // Beskär också i höjdled, så korta kvitton inte får massa tomrum
+    return cols.map(([a, b]) => {
+      let y0 = H, y1 = -1;
+      for (let y = 0; y < H; y++) {
+        let n = 0;
+        for (let x = a; x <= b; x++) if (dark[y * W + x]) n++;
+        if (n > Math.max(2, (b - a) * 0.01)) { if (y < y0) y0 = y; y1 = y; }
+      }
+      if (y1 < 0) { y0 = 0; y1 = H - 1; }
+      const px = Math.round(W * 0.006), py = Math.round(H * 0.006);
+      return {
+        x0: Math.max(0, a - px) / W, x1: Math.min(W - 1, b + px + 1) / W,
+        y0: Math.max(0, y0 - py) / H, y1: Math.min(H - 1, y1 + py + 1) / H,
+      };
+    });
+  } catch (e) { console.warn('Kunde inte dela upp skanningen', e); return null; }
+  finally { URL.revokeObjectURL(url); }
+}
+async function cropJpeg(pg, cr) {
+  const url = URL.createObjectURL(pg.jpeg);
+  try {
+    const img = await loadImg(url);
+    const IW = img.naturalWidth, IH = img.naturalHeight;
+    const x = Math.round(cr.x0 * IW), y = Math.round(cr.y0 * IH);
+    const w = Math.max(1, Math.round((cr.x1 - cr.x0) * IW)), h = Math.max(1, Math.round((cr.y1 - cr.y0) * IH));
+    const c = document.createElement('canvas'); c.width = w; c.height = h;
+    const ctx = c.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, w, h);
+    ctx.drawImage(img, x, y, w, h, 0, 0, w, h);
+    return await canvasToBlob(c, 'image/jpeg', 0.9);
+  } finally { URL.revokeObjectURL(url); }
+}
+// Hur brett kvittot blir i rutan, med hänsyn till att det kan roteras.
+function fitIn(emb, cw, ch, pad) {
+  const w = cw - 2 * pad, h = ch - 2 * pad;
+  const s0 = Math.min(w / emb.w, h / emb.h);
+  const s1 = Math.min(w / emb.h, h / emb.w);
+  if (s1 > s0 * 1.15) return { sc: s1, rot: true, dw: emb.h * s1, dh: emb.w * s1 };
+  return { sc: s0, rot: false, dw: emb.w * s0, dh: emb.h * s0 };
+}
+// Så stor bilagan skulle vara om hela originalsidan lades på ett A4 – alltså
+// storleken den har i dag när kvittona skannas och skickas in.
+function baseWidth(it) {
+  const s = Math.min(595 / it.pagePx.w, 842 / it.pagePx.h);
+  return it.emb.w * s;
+}
+// Packar så många bilagor per sida som får plats utan att de blir mindre än
+// dubbelt så stora som på en vanlig A4-skanning.
+function planPages(items, w, h) {
+  const GAP = 14, PAD = 8, LAYOUTS = [{ n: 1, cols: 1, rows: 1 }, { n: 2, cols: 2, rows: 1 }, { n: 4, cols: 2, rows: 2 }];
+  const pages = []; let i = 0;
+  while (i < items.length) {
+    let chosen = LAYOUTS[0];
+    for (const L of LAYOUTS) {
+      const n = Math.min(L.n, items.length - i);
+      if (n < L.n) continue;
+      const cw = (w - GAP * (L.cols - 1)) / L.cols, ch = (h - GAP * (L.rows - 1)) / L.rows;
+      if (items.slice(i, i + n).every((it) => fitIn(it.emb, cw, ch, PAD).dw >= 1.8 * baseWidth(it)) && L.n > chosen.n) chosen = L;
+    }
+    const n = Math.min(chosen.n, items.length - i);
+    pages.push({ items: items.slice(i, i + n), cols: chosen.cols, rows: chosen.rows });
+    i += n;
+  }
+  return pages;
+}
+async function attachmentItems() {
   const order = [...attachments].map((a) => ({ a, min: Math.min(...bilagaNumbersFor(a).concat([Infinity])) }))
     .sort((x, y) => (x.min - y.min) || (x.a.order - y.a.order)).map((x) => x.a);
   const items = [];
   for (const att of order) {
     const n = Math.max(1, att.pages.length);
-    for (let p = 0; p < n; p++) items.push({ att, pageIndex: p, label: labelForNums(bilagaNumbersFor(att, p)) });
+    for (let p = 0; p < n; p++) {
+      const nums = bilagaNumbersFor(att, p);
+      const pg = att.pages[p];
+      const crops = nums.length > 1 ? await detectColumns(pg, nums.length) : null;
+      const pagePx = { w: (pg && pg.width) || 1240, h: (pg && pg.height) || 1754 };
+      if (crops) {
+        // Kvittona läses av från vänster till höger, så spalt k hör ihop med
+        // bilaganummer k. Numren är redan sorterade stigande.
+        const sorted = [...nums].sort((a, b) => a - b);
+        crops.forEach((cr, k) => items.push({ att, pageIndex: p, crop: cr, pagePx, label: labelForNums([sorted[k]]) }));
+      } else {
+        items.push({ att, pageIndex: p, pagePx, label: labelForNums(nums) });
+      }
+    }
   }
   return items;
 }
 async function embedItem(doc, it) {
   const { att, pageIndex } = it; const pg = att.pages[pageIndex];
-  if (att.mime === 'application/pdf' && !(pg && pg.rotate % 360)) {
+  if (!it.crop && att.mime === 'application/pdf' && !(pg && pg.rotate % 360)) {
     try {
       const bytes = new Uint8Array(await att.blob.arrayBuffer());
       const [emb] = await doc.embedPdf(bytes, [pageIndex]);
@@ -1204,11 +1557,12 @@ async function embedItem(doc, it) {
     } catch (e) { console.warn('embedPdf misslyckades, använder bild', e); }
   }
   if (!pg) throw new Error('Bilagan ' + att.name + ' är inte inläst ännu');
-  const jpg = await doc.embedJpg(new Uint8Array(await pg.jpeg.arrayBuffer()));
+  const blob = it.crop ? await cropJpeg(pg, it.crop) : pg.jpeg;
+  const jpg = await doc.embedJpg(new Uint8Array(await blob.arrayBuffer()));
   return { draw: (page, o) => page.drawImage(jpg, o), w: jpg.width, h: jpg.height };
 }
 async function buildPdf() {
-  const { PDFDocument, StandardFonts, rgb } = window.PDFLib;
+  const { PDFDocument, StandardFonts, rgb, degrees } = window.PDFLib;
   const doc = await PDFDocument.create();
   doc.setTitle(`Utläggsredovisning ${current.title || ''}`.trim()); doc.setAuthor(current.name || ''); doc.setProducer('Utläggsappen');
   const font = await doc.embedFont(StandardFonts.Helvetica);
@@ -1216,37 +1570,49 @@ async function buildPdf() {
   const logo = await doc.embedPng(await (await fetch(BASE + 'assets/logo.png')).arrayBuffer());
   let sig = null;
   if (settings.signature) { try { sig = await doc.embedPng(dataUrlToBytes(settings.signature)); } catch (e) { console.warn(e); } }
-  const items = attachmentItems();
+  const items = await attachmentItems();
   for (const it of items) it.emb = await embedItem(doc, it);
 
   const [PW, PH] = A3;
+  const M = 30;
   const nRows = Math.max(15, current.rows.length);
-  const FH = formHeight(nRows);
   const page1 = doc.addPage([PW, PH]);
-  const res = { font, bold, logo, sig, rgb, PH };
-  const gridTop = 30, gridBottom = PH - FH - 36;
-  const first = items.length <= 2 ? Math.min(items.length, 2) : Math.min(items.length, 4);
-  drawGrid(page1, items.slice(0, first), { x: 30, top: gridTop, w: PW - 60, h: gridBottom - gridTop, cols: 2, rows: items.length <= 2 ? 1 : 2 }, res);
-  drawForm(page1, PH - FH - 22, res, nRows);
-  for (let i = first; i < items.length; i += 4) {
-    const p = doc.addPage([PW, PH]);
-    drawGrid(p, items.slice(i, i + 4), { x: 30, top: 30, w: PW - 60, h: PH - 60, cols: 2, rows: 2 }, res);
+  const res = { font, bold, logo, sig, rgb, degrees, PH };
+  // Med högst två bilagor får blanketten och kvittona plats på samma sida.
+  // Med fler får blanketten en egen sida i stor skala och kvittona egna sidor,
+  // så att ekonomiavdelningen kan läsa både siffrorna och kvittona.
+  if (items.length && items.length <= 2) {
+    setFormScale(1);
+    const FH = formHeight(nRows);
+    drawGrid(page1, items, { x: M, top: M, w: PW - 2 * M, h: PH - FH - 36 - M, cols: items.length, rows: 1 }, res);
+    drawForm(page1, PH - FH - 22, res, nRows);
+  } else {
+    setFormScale(fitFormScale(nRows, PW - 2 * M, PH - 2 * M));
+    const FH = formHeight(nRows);
+    drawForm(page1, Math.max(M, (PH - FH) / 2), res, nRows);
+    for (const g of planPages(items, PW - 2 * M, PH - 2 * M)) {
+      const p = doc.addPage([PW, PH]);
+      drawGrid(p, g.items, { x: M, top: M, w: PW - 2 * M, h: PH - 2 * M, cols: g.cols, rows: g.rows }, res);
+    }
   }
+  setFormScale(1);
   return doc.save();
 }
 function drawGrid(page, items, g, res) {
   if (!items.length) return;
-  const { rgb, PH, bold } = res; const gap = 14, pad = 8;
+  const { rgb, PH, bold, degrees } = res; const gap = 14, pad = 8;
   const cw = (g.w - gap * (g.cols - 1)) / g.cols, ch = (g.h - gap * (g.rows - 1)) / g.rows;
   items.forEach((it, i) => {
     const col = i % g.cols, row = Math.floor(i / g.cols);
     const cx = g.x + col * (cw + gap), ctop = g.top + row * (ch + gap);
-    const sc = Math.min((cw - 2 * pad) / it.emb.w, (ch - 2 * pad) / it.emb.h);
-    const dw = it.emb.w * sc, dh = it.emb.h * sc;
-    const x = cx + (cw - dw) / 2, top = ctop + pad;
+    const f = fitIn(it.emb, cw, ch, pad);
+    const dw = f.dw, dh = f.dh;
+    const x = cx + (cw - dw) / 2, top = ctop + (ch - dh) / 2;
     const y = PH - top - dh;
     page.drawRectangle({ x: x - 1, y: y - 1, width: dw + 2, height: dh + 2, borderColor: rgb(0.8, 0.8, 0.8), borderWidth: 0.5, color: rgb(1, 1, 1) });
-    it.emb.draw(page, { x, y, width: dw, height: dh });
+    // Liggande bilagor i en stående ruta vrids ett kvarts varv i stället för att krympas.
+    if (f.rot) it.emb.draw(page, { x: x + dw, y, width: it.emb.w * f.sc, height: it.emb.h * f.sc, rotate: degrees(90) });
+    else it.emb.draw(page, { x, y, width: dw, height: dh });
     if (it.label) {
       const blue = rgb(0.1, 0.29, 0.85); const r = it.label.length > 2 ? 12 : 9.5;
       const lx = x + 12, ly = PH - (top + 12);
@@ -1356,6 +1722,8 @@ function drawForm(page, top, res, nRows) {
 async function generatePdf() {
   if (!current) return;
   if (attachments.some((a) => a.status === 'processing' || a.status === 'pending')) { toast('Vänta tills alla kvitton är avlästa', 'bad'); return; }
+  const miss = missingAttachments();
+  if (miss.length && !confirm(`${miss.length} bilag${miss.length === 1 ? 'a finns' : 'or finns'} bara på en annan enhet och kommer inte med i PDF:en. Skapa ändå?`)) return;
   const btn = $('btnPdf'), lbl = btn.querySelector('span'); btn.disabled = true; lbl.textContent = 'Skapar PDF…';
   try {
     const bytes = await buildPdf();
@@ -1458,9 +1826,12 @@ $('btnXlsx').onclick = async () => {
 };
 $('btnDeleteReport').onclick = async () => {
   if (!confirm(`Ta bort rapporten "${current.title}" med alla kvitton?`)) return;
+  const gone = { id: current.id, title: current.title, at: Date.now() };
   for (const a of attachments) await dbDel('attachments', a.id);
   await dbDel('reports', current.id);
   reports = reports.filter((r) => r.id !== current.id); current = null; attachments = [];
+  // Gravsten, annars kommer rapporten tillbaka från den andra enheten
+  if (syncEnabled()) { sync.pendingTombstones.push(gone); saveSync(); scheduleSync(); }
   renderReports(); showScreen('scrReports');
 };
 
@@ -1504,9 +1875,12 @@ function renderSettings() {
   document.querySelectorAll('[data-s]').forEach((inp) => { inp.value = settings[inp.dataset.s] || ''; });
   $('sigBox').innerHTML = settings.signature ? `<img class="sigprev" src="${settings.signature}" alt="Signatur">` : '<span class="small muted">Ingen signatur sparad.</span>';
   $('keyStatus').textContent = settings.apiKey ? 'Nyckel sparad' : '';
+  renderSync();
 }
 document.querySelectorAll('[data-s]').forEach((inp) => inp.addEventListener('input', () => {
-  settings[inp.dataset.s] = inp.value.trim(); saveSettings(); if (inp.dataset.s === 'apiKey') $('keyStatus').textContent = '';
+  settings[inp.dataset.s] = inp.value.trim(); saveSettings();
+  if (inp.dataset.s === 'apiKey') $('keyStatus').textContent = '';
+  if (inp.dataset.s === 'gDriveClientId') { gToken = null; tokenClient = null; renderSync(); }
 }));
 $('btnTestKey').onclick = testApiKey;
 $('btnOcrDl').onclick = async () => {
@@ -1540,19 +1914,326 @@ $('btnBack').onclick = async () => {
   await loadReports(); renderReports(); showScreen('scrReports'); screenStack = [];
 };
 
+// ---------- Synk mellan enheter (Google Drive) ----------
+// Rapporterna (uppgifter och rader) läggs som en JSON-fil per rapport i mappen
+// "Utläggsappen" på användarens egen Google Drive. Kvittobilder synkas INTE –
+// de stannar på enheten där de lades till. Inställningarna synkas heller aldrig:
+// där ligger API-nyckeln till Claude och den signatur som ritas in i blanketten.
+const GIS_SRC = 'https://accounts.google.com/gsi/client';
+const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
+const DRIVE_FOLDER = 'Utläggsappen';
+const SYNC_KEY = 'utlaggsappen.sync';
+const SYNC_SCHEMA = 1;
+const TOMBSTONE_DAYS = 60;
+
+let sync = loadSync();
+function loadSync() {
+  let s = {};
+  try { s = JSON.parse(localStorage.getItem(SYNC_KEY) || '{}'); } catch {}
+  return { deviceId: s.deviceId || uid(), account: s.account || '', folderId: s.folderId || '', files: s.files || {}, pendingTombstones: s.pendingTombstones || [], lastPullAt: s.lastPullAt || 0, lastError: s.lastError || null };
+}
+function saveSync() { try { localStorage.setItem(SYNC_KEY, JSON.stringify(sync)); } catch {} }
+const syncEnabled = () => !!settings.gDriveClientId;
+
+// -- inloggning --
+let gToken = null, tokenClient = null, needsAuth = false;
+async function gisReady() {
+  if (!window.google?.accounts?.oauth2) {
+    if (!navigator.onLine) throw new Error('Ingen internetanslutning');
+    await loadScript(GIS_SRC);
+  }
+  if (!tokenClient || tokenClient._clientId !== settings.gDriveClientId) {
+    tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: settings.gDriveClientId, scope: DRIVE_SCOPE, prompt: '',
+      callback: () => {}, error_callback: () => {},
+    });
+    tokenClient._clientId = settings.gDriveClientId;
+  }
+  return tokenClient;
+}
+// Åtkomsttoken lever en timme och sparas bara i minnet – aldrig i localStorage.
+// Utan server går det inte att få en refresh-token, så då och då behövs ett klick.
+async function getToken({ interactive = false } = {}) {
+  if (gToken && gToken.expiresAt - Date.now() > 60000) return gToken.value;
+  if (!syncEnabled()) throw new Error('Inget klient-ID angivet');
+  const client = await gisReady();
+  return new Promise((resolve, reject) => {
+    let done = false;
+    const finish = (fn, v) => { if (!done) { done = true; clearTimeout(timer); fn(v); } };
+    const timer = setTimeout(() => finish(reject, new Error('Google svarade inte – tryck på synk-knappen för att logga in')), 30000);
+    client.callback = (res) => {
+      if (res.error) return finish(reject, new Error(res.error_description || res.error));
+      gToken = { value: res.access_token, expiresAt: Date.now() + (Number(res.expires_in) || 3600) * 1000 };
+      needsAuth = false;
+      finish(resolve, res.access_token);
+    };
+    client.error_callback = (err) => finish(reject, new Error(err?.type === 'popup_closed' ? 'Inloggningen avbröts' : (err?.type || 'Inloggningen misslyckades')));
+    try { client.requestAccessToken({ prompt: interactive && !sync.account ? 'consent' : '' }); }
+    catch (e) { finish(reject, e); }
+  });
+}
+class DriveError extends Error {
+  constructor(status, body) { super(driveMessage(status, body)); this.status = status; this.body = body; }
+}
+function driveMessage(status, body) {
+  const s = String(body || '');
+  if (status === 403 && /has not been used in project|accessNotConfigured/.test(s)) return 'Google Drive API är inte aktiverat i ditt Google Cloud-projekt';
+  if (status === 403 && /insufficient/i.test(s)) return 'Saknar behörighet till Drive – koppla från och anslut igen';
+  if (status === 401) return 'Inloggningen har gått ut';
+  return 'Drive svarade ' + status;
+}
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+async function driveFetch(url, opts = {}, tries = 0) {
+  const token = await getToken();
+  const res = await fetch(url, { ...opts, headers: { Authorization: 'Bearer ' + token, ...(opts.headers || {}) } });
+  if (res.status === 401 && tries === 0) { gToken = null; return driveFetch(url, opts, 1); }
+  if ((res.status === 429 || res.status >= 500) && tries < 3) { await sleep(1000 * Math.pow(2, tries)); return driveFetch(url, opts, tries + 1); }
+  if (!res.ok) throw new DriveError(res.status, await res.text().catch(() => ''));
+  if (opts.raw) return res;
+  return res.status === 204 ? null : res.json();
+}
+const API = 'https://www.googleapis.com/drive/v3/files';
+const UPLOAD = 'https://www.googleapis.com/upload/drive/v3/files';
+async function ensureFolder() {
+  if (sync.folderId) {
+    try {
+      const meta = await driveFetch(`${API}/${sync.folderId}?fields=id,trashed`);
+      if (meta && !meta.trashed) return sync.folderId;
+    } catch (e) { if (e.status !== 404) throw e; }
+    sync.folderId = '';
+  }
+  // Matcha på appProperties så att mappen får bytas namn i Drive
+  const q = "appProperties has { key='utlaggsappen' and value='root' } and mimeType='application/vnd.google-apps.folder' and trashed=false";
+  const found = await driveFetch(`${API}?q=${encodeURIComponent(q)}&spaces=drive&fields=files(id)&pageSize=10`);
+  if (found.files?.length) { sync.folderId = found.files[0].id; saveSync(); return sync.folderId; }
+  const made = await driveFetch(`${API}?fields=id`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: DRIVE_FOLDER, mimeType: 'application/vnd.google-apps.folder', appProperties: { utlaggsappen: 'root' } }),
+  });
+  sync.folderId = made.id; saveSync(); return sync.folderId;
+}
+async function listRemote(folderId) {
+  const out = []; let pageToken = '';
+  do {
+    const q = `'${folderId}' in parents and trashed=false`;
+    const url = `${API}?q=${encodeURIComponent(q)}&spaces=drive&fields=nextPageToken,files(id,name,modifiedTime,appProperties)&pageSize=200${pageToken ? '&pageToken=' + pageToken : ''}`;
+    const r = await driveFetch(url);
+    out.push(...(r.files || [])); pageToken = r.nextPageToken || '';
+  } while (pageToken);
+  return out.filter((f) => f.appProperties?.reportId);
+}
+const readRemote = (fileId) => driveFetch(`${API}/${fileId}?alt=media`, { raw: true }).then((r) => r.json());
+async function createRemote(folderId, reportId, name, payload) {
+  const meta = await driveFetch(`${API}?fields=id`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, parents: [folderId], mimeType: 'application/json', appProperties: { utlaggsappen: 'report', reportId, schema: String(SYNC_SCHEMA) } }),
+  });
+  return writeRemote(meta.id, payload);
+}
+const writeRemote = (fileId, payload) => driveFetch(`${UPLOAD}/${fileId}?uploadType=media&fields=id,modifiedTime`, {
+  method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
+});
+
+// -- innehållet som synkas --
+function reportPayload(r, deleted = false) {
+  const rows = (r.rows || []).map((row) => {
+    const o = {};
+    for (const k of Object.keys(row)) if (!k.startsWith('_')) o[k] = row[k];
+    return o;
+  });
+  return {
+    schema: SYNC_SCHEMA, app: 'utlaggsappen', deleted,
+    writtenBy: { deviceId: sync.deviceId, label: settings.deviceName || '', appVersion: APP_VERSION },
+    report: { ...r, rows, attachmentsMeta: undefined },
+    attachmentsMeta: r.attachmentsMeta || [],
+  };
+}
+function metaForAttachments(list) {
+  return list.map((a) => ({ id: a.id, name: a.name, mime: a.mime, pages: (a.pages || []).length, order: a.order, deviceId: sync.deviceId }));
+}
+// Behåll bilagor som lades till på andra enheter, byt ut den här enhetens egna.
+function mergeMeta(existing, mine) {
+  return [...mine, ...(existing || []).filter((m) => m.deviceId && m.deviceId !== sync.deviceId)];
+}
+const remoteFileName = (r) => `${safeFileName(r.title || 'Utlägg')} (${String(r.id).slice(0, 8)}).utlagg.json`;
+
+// -- själva synken --
+let syncing = null, syncAgain = false, syncTimer = null;
+function scheduleSync() {
+  if (!syncEnabled() || needsAuth) return;
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(() => syncNow().catch(() => {}), 3000);
+}
+function setSyncStatus(text, state = '') {
+  const el = $('gStatus'); if (el) el.textContent = text;
+  const btn = $('btnSyncTop');
+  if (btn) { btn.hidden = !syncEnabled(); btn.classList.toggle('busy', state === 'busy'); btn.classList.toggle('bad', state === 'bad'); }
+  const line = $('syncLine'); if (line) line.textContent = syncEnabled() ? text : '';
+}
+function syncStatusText() {
+  if (!syncEnabled()) return 'Inte ansluten';
+  if (!navigator.onLine) return 'Offline – synkas när du är uppkopplad';
+  if (needsAuth) return 'Anslut till Google igen';
+  const t = sync.lastPullAt ? new Date(sync.lastPullAt).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' }) : '';
+  if (sync.lastError) return 'Fel: ' + sync.lastError;
+  return (sync.account ? 'Ansluten som ' + sync.account : 'Ansluten') + (t ? ' · synkad ' + t : '');
+}
+function renderSync() {
+  const on = syncEnabled();
+  $('btnGConnect').hidden = on && !!sync.account && !needsAuth;
+  $('btnGSync').hidden = !on;
+  $('btnGDisconnect').hidden = !on || !sync.account;
+  setSyncStatus(syncStatusText(), needsAuth || sync.lastError ? 'bad' : '');
+}
+async function syncNow({ interactive = false } = {}) {
+  if (!syncEnabled()) return;
+  if (syncing) { syncAgain = true; return syncing; }
+  if (!navigator.onLine) { renderSync(); return; }
+  syncing = (async () => {
+    setSyncStatus('Synkar…', 'busy');
+    try {
+      if (interactive) await getToken({ interactive: true });
+      const folderId = await ensureFolder();
+      for (const t of sync.pendingTombstones.splice(0)) {
+        try { await pushTombstone(folderId, t); } catch { sync.pendingTombstones.push(t); }
+      }
+      const remote = await listRemote(folderId);
+      const byId = new Map(remote.map((f) => [f.appProperties.reportId, f]));
+      let changed = false;
+
+      for (const f of remote) {
+        const id = f.appProperties.reportId;
+        const known = sync.files[id];
+        const local = await dbGet('reports', id);
+        if (known && known.remoteModifiedTime === f.modifiedTime && local) continue;
+        let data;
+        try { data = await readRemote(f.id); } catch (e) { console.warn('Kunde inte läsa', f.name, e); continue; }
+        if (!data || data.app !== 'utlaggsappen' || !data.report) { console.warn('Hoppar över främmande fil', f.name); continue; }
+        sync.files[id] = { fileId: f.id, remoteModifiedTime: f.modifiedTime, syncedUpdatedAt: data.report.updatedAt };
+        if (data.deleted) {
+          const age = Date.now() - (data.report.deletedAt || data.report.updatedAt || 0);
+          if (local && (data.report.updatedAt || 0) > (local.updatedAt || 0)) { await removeLocalReport(id); changed = true; }
+          if (age > TOMBSTONE_DAYS * 864e5) { try { await driveFetch(`${API}/${f.id}`, { method: 'DELETE' }); delete sync.files[id]; } catch {} }
+          continue;
+        }
+        const inc = migrateRows({ ...data.report, attachmentsMeta: data.attachmentsMeta || [] });
+        if (!local) { await dbPut('reports', inc); changed = true; }
+        else if ((inc.updatedAt || 0) > (local.updatedAt || 0)) {
+          // Skriv aldrig över rapporten som är öppen mitt under redigering.
+          if (current && current.id === id) showRemoteChange(inc);
+          else { await dbPut('reports', inc); changed = true; }
+        } else if ((local.updatedAt || 0) > (inc.updatedAt || 0)) {
+          sync.files[id].syncedUpdatedAt = null;
+        }
+      }
+
+      for (const r of await dbAll('reports')) {
+        const known = sync.files[r.id];
+        const f = byId.get(r.id);
+        if (!f) { const res = await createRemote(folderId, r.id, remoteFileName(r), reportPayload(r)); sync.files[r.id] = { fileId: res.id, remoteModifiedTime: res.modifiedTime, syncedUpdatedAt: r.updatedAt }; }
+        else if (!known || known.syncedUpdatedAt !== r.updatedAt) {
+          const res = await writeRemote(f.id, reportPayload(r));
+          sync.files[r.id] = { fileId: f.id, remoteModifiedTime: res.modifiedTime, syncedUpdatedAt: r.updatedAt };
+        }
+      }
+      sync.lastPullAt = Date.now(); sync.lastError = null; saveSync();
+      if (changed) { await loadReports(); renderReports(); }
+    } catch (e) {
+      console.warn('Synk misslyckades', e);
+      if (e.status === 401 || /inloggning/i.test(e.message)) needsAuth = true;
+      sync.lastError = e.message; saveSync();
+    } finally {
+      renderSync(); syncing = null;
+      if (syncAgain) { syncAgain = false; scheduleSync(); }
+    }
+  })();
+  return syncing;
+}
+async function pushTombstone(folderId, t) {
+  const payload = { schema: SYNC_SCHEMA, app: 'utlaggsappen', deleted: true, writtenBy: { deviceId: sync.deviceId }, report: { id: t.id, title: t.title, updatedAt: t.at, deletedAt: t.at }, attachmentsMeta: [] };
+  const known = sync.files[t.id];
+  if (known?.fileId) { try { await writeRemote(known.fileId, payload); return; } catch (e) { if (e.status !== 404) throw e; } }
+  await createRemote(folderId, t.id, `${safeFileName(t.title || 'Utlägg')} (${String(t.id).slice(0, 8)}).utlagg.json`, payload);
+}
+async function removeLocalReport(id) {
+  for (const a of await dbByIndex('attachments', 'reportId', id)) await dbDel('attachments', a.id);
+  await dbDel('reports', id);
+  if (current && current.id === id) { current = null; attachments = []; toast('Rapporten togs bort på en annan enhet', 'bad'); showScreen('scrReports'); }
+}
+function showRemoteChange(inc) {
+  const el = $('remoteBar'); if (!el) return;
+  el.hidden = false;
+  el.innerHTML = 'Rapporten har ändrats på en annan enhet. <button class="btn small" id="btnReload">Läs in</button>';
+  $('btnReload').onclick = async () => { await dbPut('reports', inc); el.hidden = true; await loadReports(); await openReport(inc.id); };
+}
+
+// -- export/import som reserv (och för att flytta en rapport utan Drive) --
+async function exportReport() {
+  if (!current) return;
+  const blob = new Blob([JSON.stringify(reportPayload(current), null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = `${safeFileName(current.title || 'Utlägg')}.utlagg.json`;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 30000);
+}
+async function importReport(file) {
+  try {
+    const data = JSON.parse(await file.text());
+    if (data.app !== 'utlaggsappen' || !data.report) throw new Error('Filen är inte en utläggsrapport');
+    const r = migrateRows({ ...data.report, attachmentsMeta: data.attachmentsMeta || [] });
+    const local = await dbGet('reports', r.id);
+    if (local && !confirm(`Rapporten "${r.title}" finns redan. Ersätta den?`)) return;
+    await dbPut('reports', r);
+    await loadReports(); renderReports(); await openReport(r.id);
+    toast('Rapporten importerades');
+  } catch (e) { toast('Kunde inte importera: ' + e.message, 'bad'); }
+}
+
+// -- knappar och utlösare --
+$('btnGConnect').onclick = async () => {
+  if (!syncEnabled()) { toast('Klistra in ett klient-ID först', 'bad'); return; }
+  try {
+    await getToken({ interactive: true });
+    const me = await driveFetch('https://www.googleapis.com/drive/v3/about?fields=user(emailAddress)');
+    sync.account = me.user?.emailAddress || ''; sync.lastError = null; saveSync();
+    await syncNow({ interactive: true });
+    toast('Ansluten till Google Drive');
+  } catch (e) { sync.lastError = e.message; saveSync(); renderSync(); toast('Kunde inte ansluta: ' + e.message, 'bad'); }
+};
+$('btnGSync').onclick = () => syncNow({ interactive: true });
+$('btnSyncTop').onclick = () => syncNow({ interactive: true });
+$('btnGDisconnect').onclick = () => {
+  if (!confirm('Koppla från Google Drive? Rapporterna ligger kvar både här och i din Drive.')) return;
+  gToken = null; needsAuth = false;
+  sync.account = ''; sync.folderId = ''; sync.files = {}; sync.pendingTombstones = []; sync.lastError = null; saveSync();
+  renderSync(); toast('Frånkopplad');
+};
+$('btnExport').onclick = exportReport;
+$('btnImport').onclick = () => $('importInput').click();
+$('importInput').onchange = (e) => { const f = e.target.files[0]; if (f) importReport(f); e.target.value = ''; };
+window.addEventListener('online', () => { renderSync(); scheduleSync(); });
+window.addEventListener('offline', renderSync);
+document.addEventListener('visibilitychange', () => {
+  if (!syncEnabled()) return;
+  if (document.visibilityState === 'visible') { if (Date.now() - sync.lastPullAt > 60000) syncNow().catch(() => {}); }
+  else if (current) saveReport.flush?.();
+});
+
 // ---------- Start ----------
 (async () => {
   for (const id of ['appVersion', 'appVersion2', 'appVersionSide']) $(id).textContent = `Utläggsappen v${APP_VERSION} · ${APP_BUILD}`;
   $('aiHint').textContent = settings.apiKey ? 'Kvitton läses av med AI (Claude).' : 'Tips: lägg in en API-nyckel under Inställningar för bättre avläsning av kvitton.';
   try { await loadReports(); } catch (e) { console.error(e); toast('Kunde inte öppna databasen: ' + e.message, 'bad'); }
   renderReports();
+  const oh = $('originHint'); if (oh) oh.textContent = location.origin;
+  renderSync();
+  if (syncEnabled()) syncNow().catch(() => {});
   if ('serviceWorker' in navigator && location.protocol !== 'file:') {
     navigator.serviceWorker.register('sw.js').catch((e) => console.warn('SW', e));
   }
 })();
 
 // Exponeras för tester och felsökning
-window.__utlagg = { parseReceiptText, parsePageReceipts, clusterColumns, splitColumnsByWords, buildPdf, buildXlsx, addFiles, get state() { return { current, attachments, settings }; }, openReport, newReport, loadReports, get reports() { return reports; } };
+window.__utlagg = { syncNow, saveReportNow: () => saveReport.flush(), parseReceiptText, parsePageReceipts, clusterColumns, splitColumnsByWords, fitFormScale, formHeightAt, planPages, detectColumns, amountState, reconcileAmounts, rowNet, reportTotals, findRateBreakdown, findNet, buildPdf, buildXlsx, addFiles, get state() { return { current, attachments, settings }; }, openReport, newReport, loadReports, get reports() { return reports; } };
 </script>
 </body>
 </html>

@@ -1,10 +1,14 @@
 # Utläggsappen
 
 Webbapp (PWA) för utläggsredovisning: fota eller ladda upp kvitton, låt appen läsa av
-datum, belopp, moms och beskrivning, granska raderna och skapa en samlad PDF – bilagorna
-överst och den ifyllda utläggsredovisningen nederst på en A3-sida – som kan skickas för
-attest och vidare till löneavdelningen. Dessutom kan en ifylld kopia av Excel-mallen
-laddas ner.
+datum, belopp, moms, kostnad utan moms och beskrivning, granska raderna och skapa en
+samlad PDF som kan skickas för attest och vidare till löneavdelningen. Dessutom kan en
+ifylld kopia av Excel-mallen laddas ner.
+
+PDF:en görs på A3 för läslighetens skull. Med högst två bilagor ligger blanketten och
+kvittona på samma sida; med fler får blanketten en egen sida i stor skala och kvittona
+egna sidor. Skanningar med flera kvitton bredvid varandra delas upp automatiskt så att
+varje kvitto beskärs och visas för sig, med sitt bilaganummer i en blå ring.
 
 Allt är statiska filer – ingen server eller byggsteg behövs. Appen fungerar på mobil,
 surfplatta och dator och kan läggas till på hemskärmen.
@@ -12,14 +16,50 @@ surfplatta och dator och kan läggas till på hemskärmen.
 ## Använda appen
 
 1. **Ny rapport** – namnge månaden, fyll i namn/anställningsnummer (kommer ihåg sig).
-2. **Fota kvitto** eller **Välj bild/PDF** – varje kvitto blir en rad. Belopp, moms, datum
-   och beskrivning fylls i automatiskt; gulmarkerade rader bör kontrolleras.
+2. **Fota kvitto** eller **Välj bild/PDF** – varje kvitto blir en rad. Totalbelopp, moms,
+   kostnaden utan moms, datum och beskrivning fylls i automatiskt; gulmarkerade rader bör
+   kontrolleras.
 3. Rätta vid behov, lägg till projekt/kst/konto.
 4. **Skapa PDF** – förhandsgranska, spara eller dela. **Ladda ner Excel** ger mallen ifylld.
-5. Under ⚙ kan du rita din **signatur** (ritas in i Sign-fältet) och ange standardvärden.
+5. Under ⚙ kan du rita din **signatur** (ritas in i Sign-fältet), ange standardvärden och
+   slå på synk mellan enheter.
 
 Rapporter och kvitton sparas lokalt i webbläsaren (IndexedDB). Inget skickas någonstans,
-förutom till Anthropic om du valt AI-läsning.
+förutom till Anthropic om du valt AI-läsning och till din egen Google Drive om du slagit
+på synk.
+
+## Belopp med och utan moms
+
+Varje rad har **Totalbelopp**, **Varav moms** och **Utan moms**. Nettot läses direkt från
+kvittots momsspecifikation när en sådan finns (t.ex. `MOMS% BRUTTO MOMS NETTO`), annars
+räknas det fram som totalbelopp minus moms. Fyller du i två av de tre fälten räknas det
+tredje ut automatiskt.
+
+Går de tre beloppen inte ihop markeras raden rött, eftersom det oftast betyder att något
+lästes av fel. Skillnader på öresnivå mellan momsspecifikationen och beloppet som faktiskt
+drogs (öresavrundning) räknas inte som fel. Appen gissar aldrig en momssats: står momsen
+inte på kvittot lämnas både moms och netto tomma.
+
+Blanketten har ingen nettokolumn, så fältet finns bara i appen – Excel-filen och PDF:en är
+oförändrade mot mallen.
+
+## Synk mellan enheter
+
+Under ⚙ → **Synk mellan enheter** kan rapporterna läggas i mappen `Utläggsappen` på din
+egen Google Drive, en JSON-fil per rapport, så att en rapport du börjar på i mobilen finns
+på datorn. **Kvittobilderna synkas inte** – de ligger kvar på enheten där de lades till,
+och appen varnar innan du skapar en PDF på en enhet där bilagorna saknas. API-nyckeln och
+signaturen synkas aldrig.
+
+Du behöver skapa ett eget OAuth-klient-ID en gång (stegen finns i appen under ⚙):
+projekt i Google Cloud Console → aktivera **Google Drive API** → OAuth-samtyckesskärm med
+dig själv som testanvändare → behörigheten `drive.file` → klient-ID av typen
+**Web application** med `https://pimmen85.github.io` och `http://localhost:8099` som
+tillåtna JavaScript-origins. Klistra sedan in klient-ID:t i appen på varje enhet och
+anslut med samma Google-konto.
+
+Utan Drive går det också att flytta en rapport med **Exportera rapport** och
+**Importera rapport** (en JSON-fil du skickar till dig själv).
 
 ## Kvittoläsning
 
