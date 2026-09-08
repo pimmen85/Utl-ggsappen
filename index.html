@@ -459,7 +459,7 @@ import * as pdfjsLib from './vendor/pdfjs/pdf.min.mjs';
 
 // Höjs vid varje publicerad ändring, så man kan se om enheten har senaste bygget.
 // Höj även CACHE i sw.js.
-const APP_VERSION = '1.2';
+const APP_VERSION = '1.3';
 const APP_BUILD = '2026-09-08';
 
 const $ = (id) => document.getElementById(id);
@@ -1413,15 +1413,15 @@ $('rowList').addEventListener('click', (e) => {
 $('btnAddRow').onclick = () => { addRow({ date: todayISO() }); saveReport(); renderReport(); };
 
 // ---------- PDF ----------
-const A3 = [841.89, 1190.55];
+const SHEET = [1190.55, 841.89];   // A3 liggande – allt hamnar på en enda sida
 const COLW = [13.14, 11.43, 18.71, 14.43, 11.14, 11.14, 8.71, 9.14, 16, 7.14, 5.14, 10.57, 11.71]; // Excel-kolumnbredder A–M
 const COLSUM = COLW.reduce((a, b) => a + b, 0);
 const FORM_BASE_W = 510, FORM_BASE_S = 0.6;
 let FORM_W = FORM_BASE_W, S = FORM_BASE_S;
 function setFormScale(k) { FORM_W = FORM_BASE_W * k; S = FORM_BASE_S * k; }
 // Största skala där blanketten fortfarande får plats på sidan.
-function fitFormScale(nRows, maxW, maxH) {
-  let k = 1.5;
+function fitFormScale(nRows, maxW, maxH, maxK = 1.5) {
+  let k = maxK;
   while (k > 0.6 && (FORM_BASE_W * k > maxW || formHeightAt(nRows, FORM_BASE_S * k) > maxH)) k -= 0.05;
   return k;
 }
@@ -1434,8 +1434,8 @@ function formHeight(nRows) { return formHeightAt(nRows, S); }
 // Skannade ark har ofta flera kvitton bredvid varandra. Hittar de vita gatorna
 // mellan dem och beskär varje kvitto för sig, så att det blir läsbart i PDF:en.
 // Delar bara upp när antalet spalter stämmer med antalet avlästa kvitton.
-async function detectColumns(pg, want) {
-  if (!pg || !pg.jpeg || want < 2) return null;
+async function detectCrops(pg, want) {
+  if (!pg || !pg.jpeg) return null;
   const url = URL.createObjectURL(pg.jpeg);
   try {
     const img = await loadImg(url);
@@ -1464,10 +1464,13 @@ async function detectColumns(pg, want) {
       const last = merged[merged.length - 1];
       if (last && b[0] - last[1] - 1 < gap) last[1] = b[1]; else merged.push([...b]);
     }
-    const cols = merged.filter((b) => b[1] - b[0] > W * 0.05);
-    if (cols.length !== want) return null;
-    // Beskär också i höjdled, så korta kvitton inte får massa tomrum
-    return cols.map(([a, b]) => {
+    let cols = merged.filter((b) => b[1] - b[0] > W * 0.05);
+    if (!cols.length) return null;
+    // Delas bara upp när antalet spalter stämmer med antalet avlästa kvitton.
+    // Annars behandlas sidan som ett kvitto och beskärs bara till innehållet,
+    // så att marginaler och tomt papper runt omkring försvinner.
+    if (cols.length !== want) cols = [[cols[0][0], cols[cols.length - 1][1]]];
+    const boxes = cols.map(([a, b]) => {
       let y0 = H, y1 = -1;
       for (let y = 0; y < H; y++) {
         let n = 0;
@@ -1475,13 +1478,17 @@ async function detectColumns(pg, want) {
         if (n > Math.max(2, (b - a) * 0.01)) { if (y < y0) y0 = y; y1 = y; }
       }
       if (y1 < 0) { y0 = 0; y1 = H - 1; }
-      const px = Math.round(W * 0.006), py = Math.round(H * 0.006);
+      const px = Math.round(W * 0.004), py = Math.round(H * 0.004);
       return {
         x0: Math.max(0, a - px) / W, x1: Math.min(W - 1, b + px + 1) / W,
         y0: Math.max(0, y0 - py) / H, y1: Math.min(H - 1, y1 + py + 1) / H,
       };
     });
-  } catch (e) { console.warn('Kunde inte dela upp skanningen', e); return null; }
+    // Finns inget att skala bort behålls sidan orörd, så digitala PDF:er får
+    // behålla sin skarpa vektortext i stället för att gå via en bild.
+    if (boxes.length === 1 && boxes[0].x1 - boxes[0].x0 > 0.98 && boxes[0].y1 - boxes[0].y0 > 0.98) return null;
+    return boxes;
+  } catch (e) { console.warn('Kunde inte beskära bilagan', e); return null; }
   finally { URL.revokeObjectURL(url); }
 }
 async function cropJpeg(pg, cr) {
@@ -1497,38 +1504,25 @@ async function cropJpeg(pg, cr) {
     return await canvasToBlob(c, 'image/jpeg', 0.9);
   } finally { URL.revokeObjectURL(url); }
 }
-// Hur brett kvittot blir i rutan, med hänsyn till att det kan roteras.
+// Hur stort kvittot blir i rutan. Bilagorna vrids aldrig – ett liggande kvitto
+// blir visserligen större vridet, men då måste det läsas med huvudet på sned.
 function fitIn(emb, cw, ch, pad) {
-  const w = cw - 2 * pad, h = ch - 2 * pad;
-  const s0 = Math.min(w / emb.w, h / emb.h);
-  const s1 = Math.min(w / emb.h, h / emb.w);
-  if (s1 > s0 * 1.15) return { sc: s1, rot: true, dw: emb.h * s1, dh: emb.w * s1 };
-  return { sc: s0, rot: false, dw: emb.w * s0, dh: emb.h * s0 };
+  const sc = Math.min((cw - 2 * pad) / emb.w, (ch - 2 * pad) / emb.h);
+  return { sc, dw: emb.w * sc, dh: emb.h * sc };
 }
-// Så stor bilagan skulle vara om hela originalsidan lades på ett A4 – alltså
-// storleken den har i dag när kvittona skannas och skickas in.
-function baseWidth(it) {
-  const s = Math.min(595 / it.pagePx.w, 842 / it.pagePx.h);
-  return it.emb.w * s;
-}
-// Packar så många bilagor per sida som får plats utan att de blir mindre än
-// dubbelt så stora som på en vanlig A4-skanning.
-function planPages(items, w, h) {
-  const GAP = 14, PAD = 8, LAYOUTS = [{ n: 1, cols: 1, rows: 1 }, { n: 2, cols: 2, rows: 1 }, { n: 4, cols: 2, rows: 2 }];
-  const pages = []; let i = 0;
-  while (i < items.length) {
-    let chosen = LAYOUTS[0];
-    for (const L of LAYOUTS) {
-      const n = Math.min(L.n, items.length - i);
-      if (n < L.n) continue;
-      const cw = (w - GAP * (L.cols - 1)) / L.cols, ch = (h - GAP * (L.rows - 1)) / L.rows;
-      if (items.slice(i, i + n).every((it) => fitIn(it.emb, cw, ch, PAD).dw >= 1.8 * baseWidth(it)) && L.n > chosen.n) chosen = L;
-    }
-    const n = Math.min(chosen.n, items.length - i);
-    pages.push({ items: items.slice(i, i + n), cols: chosen.cols, rows: chosen.rows });
-    i += n;
+// Väljer det rutnät som gör det minsta kvittot så stort som möjligt på ytan
+// som blir över bredvid blanketten.
+function chooseGrid(items, w, h) {
+  const GAP = 14, PAD = 8;
+  let best = { cols: 1, rows: items.length, min: -1 };
+  for (let cols = 1; cols <= Math.min(6, items.length); cols++) {
+    const rows = Math.ceil(items.length / cols);
+    const cw = (w - GAP * (cols - 1)) / cols, ch = (h - GAP * (rows - 1)) / rows;
+    if (cw < 40 || ch < 40) continue;
+    const min = Math.min(...items.map((it) => fitIn(it.emb, cw, ch, PAD).sc));
+    if (min > best.min) best = { cols, rows, min };
   }
-  return pages;
+  return best;
 }
 async function attachmentItems() {
   const order = [...attachments].map((a) => ({ a, min: Math.min(...bilagaNumbersFor(a).concat([Infinity])) }))
@@ -1539,15 +1533,15 @@ async function attachmentItems() {
     for (let p = 0; p < n; p++) {
       const nums = bilagaNumbersFor(att, p);
       const pg = att.pages[p];
-      const crops = nums.length > 1 ? await detectColumns(pg, nums.length) : null;
+      const crops = await detectCrops(pg, nums.length);
       const pagePx = { w: (pg && pg.width) || 1240, h: (pg && pg.height) || 1754 };
-      if (crops) {
+      if (crops && crops.length > 1) {
         // Kvittona läses av från vänster till höger, så spalt k hör ihop med
         // bilaganummer k. Numren är redan sorterade stigande.
         const sorted = [...nums].sort((a, b) => a - b);
         crops.forEach((cr, k) => items.push({ att, pageIndex: p, crop: cr, pagePx, label: labelForNums([sorted[k]]) }));
       } else {
-        items.push({ att, pageIndex: p, pagePx, label: labelForNums(nums) });
+        items.push({ att, pageIndex: p, crop: crops ? crops[0] : null, pagePx, label: labelForNums(nums) });
       }
     }
   }
@@ -1568,7 +1562,7 @@ async function embedItem(doc, it) {
   return { draw: (page, o) => page.drawImage(jpg, o), w: jpg.width, h: jpg.height };
 }
 async function buildPdf() {
-  const { PDFDocument, StandardFonts, rgb, degrees } = window.PDFLib;
+  const { PDFDocument, StandardFonts, rgb } = window.PDFLib;
   const doc = await PDFDocument.create();
   doc.setTitle(`Utläggsredovisning ${current.title || ''}`.trim()); doc.setAuthor(current.name || ''); doc.setProducer('Utläggsappen');
   const font = await doc.embedFont(StandardFonts.Helvetica);
@@ -1579,46 +1573,38 @@ async function buildPdf() {
   const items = await attachmentItems();
   for (const it of items) it.emb = await embedItem(doc, it);
 
-  const [PW, PH] = A3;
-  const M = 30;
+  // Allt hamnar på en enda liggande sida: blanketten i naturlig storlek till
+  // höger, kvittona på ytan som blir över till vänster. Blir de många krymper
+  // de i stället för att hamna på en extra sida.
+  const [PW, PH] = SHEET;
+  const M = 30, GUTTER = 24;
   const nRows = Math.max(15, current.rows.length);
-  const page1 = doc.addPage([PW, PH]);
-  const res = { font, bold, logo, sig, rgb, degrees, PH };
-  // Med högst två bilagor får blanketten och kvittona plats på samma sida.
-  // Med fler får blanketten en egen sida i stor skala och kvittona egna sidor,
-  // så att ekonomiavdelningen kan läsa både siffrorna och kvittona.
-  if (items.length && items.length <= 2) {
-    setFormScale(1);
-    const FH = formHeight(nRows);
-    drawGrid(page1, items, { x: M, top: M, w: PW - 2 * M, h: PH - FH - 36 - M, cols: items.length, rows: 1 }, res);
-    drawForm(page1, PH - FH - 22, res, nRows);
-  } else {
-    setFormScale(fitFormScale(nRows, PW - 2 * M, PH - 2 * M));
-    const FH = formHeight(nRows);
-    drawForm(page1, Math.max(M, (PH - FH) / 2), res, nRows);
-    for (const g of planPages(items, PW - 2 * M, PH - 2 * M)) {
-      const p = doc.addPage([PW, PH]);
-      drawGrid(p, g.items, { x: M, top: M, w: PW - 2 * M, h: PH - 2 * M, cols: g.cols, rows: g.rows }, res);
-    }
+  const page = doc.addPage([PW, PH]);
+  setFormScale(fitFormScale(nRows, PW * 0.5, PH - 2 * M, 1));
+  const FH = formHeight(nRows);
+  const formX = PW - M - FORM_W;
+  const res = { font, bold, logo, sig, rgb, PH, formX };
+  if (items.length) {
+    const gw = formX - GUTTER - M, gh = PH - 2 * M;
+    const g = chooseGrid(items, gw, gh);
+    drawGrid(page, items, { x: M, top: M, w: gw, h: gh, cols: g.cols, rows: g.rows }, res);
   }
+  drawForm(page, Math.max(M, (PH - FH) / 2), res, nRows);
   setFormScale(1);
   return doc.save();
 }
 function drawGrid(page, items, g, res) {
   if (!items.length) return;
-  const { rgb, PH, bold, degrees } = res; const gap = 14, pad = 8;
+  const { rgb, PH, bold } = res; const gap = 14, pad = 8;
   const cw = (g.w - gap * (g.cols - 1)) / g.cols, ch = (g.h - gap * (g.rows - 1)) / g.rows;
   items.forEach((it, i) => {
     const col = i % g.cols, row = Math.floor(i / g.cols);
     const cx = g.x + col * (cw + gap), ctop = g.top + row * (ch + gap);
-    const f = fitIn(it.emb, cw, ch, pad);
-    const dw = f.dw, dh = f.dh;
+    const { dw, dh } = fitIn(it.emb, cw, ch, pad);
     const x = cx + (cw - dw) / 2, top = ctop + (ch - dh) / 2;
     const y = PH - top - dh;
     page.drawRectangle({ x: x - 1, y: y - 1, width: dw + 2, height: dh + 2, borderColor: rgb(0.8, 0.8, 0.8), borderWidth: 0.5, color: rgb(1, 1, 1) });
-    // Liggande bilagor i en stående ruta vrids ett kvarts varv i stället för att krympas.
-    if (f.rot) it.emb.draw(page, { x: x + dw, y, width: it.emb.w * f.sc, height: it.emb.h * f.sc, rotate: degrees(90) });
-    else it.emb.draw(page, { x, y, width: dw, height: dh });
+    it.emb.draw(page, { x, y, width: dw, height: dh });
     if (it.label) {
       const blue = rgb(0.1, 0.29, 0.85); const r = it.label.length > 2 ? 12 : 9.5;
       const lx = x + 12, ly = PH - (top + 12);
@@ -1631,7 +1617,7 @@ function drawGrid(page, items, g, res) {
 function drawForm(page, top, res, nRows) {
   const { font, bold, logo, sig, rgb, PH } = res;
   const black = rgb(0, 0, 0), grey = rgb(0.851, 0.851, 0.851), red = rgb(1, 0, 0);
-  const x0 = (A3[0] - FORM_W) / 2;
+  const x0 = res.formX;
   const cw = COLW.map((c) => c / COLSUM * FORM_W);
   const colX = []; let acc = x0; for (const w of cw) { colX.push(acc); acc += w; }
   const spanW = (a, b) => colX[b] + cw[b] - colX[a];
@@ -2277,7 +2263,7 @@ document.addEventListener('visibilitychange', () => {
 })();
 
 // Exponeras för tester och felsökning
-window.__utlagg = { syncNow, saveReportNow: () => saveReport.flush(), saveSettingsNow: () => saveSettings(), parseReceiptText, parsePageReceipts, clusterColumns, splitColumnsByWords, fitFormScale, formHeightAt, planPages, detectColumns, amountState, reconcileAmounts, rowNet, reportTotals, findRateBreakdown, findNet, buildPdf, buildXlsx, addFiles, get state() { return { current, attachments, settings }; }, openReport, newReport, loadReports, get reports() { return reports; } };
+window.__utlagg = { syncNow, saveReportNow: () => saveReport.flush(), saveSettingsNow: () => saveSettings(), parseReceiptText, parsePageReceipts, clusterColumns, splitColumnsByWords, fitFormScale, formHeightAt, chooseGrid, detectCrops, attachmentItems, fileToPages, amountState, reconcileAmounts, rowNet, reportTotals, findRateBreakdown, findNet, buildPdf, buildXlsx, addFiles, get state() { return { current, attachments, settings }; }, openReport, newReport, loadReports, get reports() { return reports; } };
 </script>
 </body>
 </html>

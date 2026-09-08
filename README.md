@@ -5,10 +5,11 @@ datum, belopp, moms, kostnad utan moms och beskrivning, granska raderna och skap
 samlad PDF som kan skickas för attest och vidare till löneavdelningen. Dessutom kan en
 ifylld kopia av Excel-mallen laddas ner.
 
-PDF:en görs på A3 för läslighetens skull. Med högst två bilagor ligger blanketten och
-kvittona på samma sida; med fler får blanketten en egen sida i stor skala och kvittona
-egna sidor. Skanningar med flera kvitton bredvid varandra delas upp automatiskt så att
-varje kvitto beskärs och visas för sig, med sitt bilaganummer i en blå ring.
+PDF:en blir **en enda liggande A3-sida** med allt: blanketten i naturlig storlek till
+höger och kvittona till vänster. Blir kvittona många krymper de i stället för att hamna på
+en extra sida. Varje bilaga beskärs till sitt innehåll så att marginaler och tomt papper
+försvinner, och skanningar med flera kvitton bredvid varandra delas upp automatiskt så att
+varje kvitto visas för sig med sitt bilaganummer i en blå ring.
 
 Allt är statiska filer – ingen server eller byggsteg behövs. Appen fungerar på mobil,
 surfplatta och dator och kan läggas till på hemskärmen.
