@@ -355,7 +355,7 @@ dialog h3{margin:0 0 4px;font-size:16px;font-weight:650}
 
         <div class="card">
           <h2>Synk mellan enheter</h2>
-          <p class="sub">Rapporterna (uppgifter och rader) sparas som en fil per rapport i mappen <b>Utläggsappen</b> på din egen Google Drive, så att samma rapport finns på både mobilen och datorn. <b>Kvittona synkas inte</b> – de ligger kvar på enheten där de lades till. Ingenting skickas någon annanstans, och API-nyckeln synkas aldrig.</p>
+          <p class="sub">Rapporterna (uppgifter och rader) sparas som en fil per rapport i mappen <b>Utläggsappen</b> på din egen Google Drive, så att samma rapport finns på både mobilen och datorn. <b>Kvittona synkas inte</b> – de ligger kvar på enheten där de lades till. Din signatur och dina standardvärden följer med, så att de finns på alla enheter. API-nyckeln stannar alltid på den här enheten.</p>
           <div class="form-row"><label for="sGoogleId">Klient-ID</label><input class="ctl" id="sGoogleId" data-s="gDriveClientId" autocomplete="off" placeholder="…apps.googleusercontent.com"></div>
           <div class="form-row"><label for="sDevice">Enhetens namn</label><input class="ctl" id="sDevice" data-s="deviceName" placeholder="t.ex. iPhone"></div>
           <div class="actions" style="margin-top:10px">
@@ -380,7 +380,7 @@ dialog h3{margin:0 0 4px;font-size:16px;font-weight:650}
 
         <div class="card">
           <h2>Signatur</h2>
-          <p class="sub">Ritas in i fältet <b>Sign</b> tillsammans med dagens datum när du skapar PDF:en.</p>
+          <p class="sub">Ritas in i fältet <b>Sign</b> tillsammans med dagens datum när du skapar PDF:en. Med synk påslagen följer signaturen med till dina andra enheter.</p>
           <div id="sigBox"></div>
           <div class="actions" style="margin-top:12px">
             <button class="btn" id="btnSigDraw"><svg class="ic"><use href="#i-pen"/></svg>Rita signatur</button>
@@ -474,14 +474,20 @@ const SETTINGS_KEY = 'utlaggsappen.settings';
 const DEFAULT_SETTINGS = {
   name: '', employeeNo: '', company: 'Midroc Mechanical AB', purpose: 'Utlägg', destination: '',
   project: '', kst: '', account: '', apiKey: '', aiModel: 'claude-opus-5', signature: '',
-  gDriveClientId: '', deviceName: '',
+  gDriveClientId: '', deviceName: '', settingsUpdatedAt: 0,
 };
 let settings = loadSettings();
 function loadSettings() {
   try { return { ...DEFAULT_SETTINGS, ...JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}') }; }
   catch { return { ...DEFAULT_SETTINGS }; }
 }
-function saveSettings() { try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch {} }
+// touch=false när inställningarna kommer från synken, så att de inte skickas
+// tillbaka som en nyare ändring.
+function saveSettings(touch = true) {
+  if (touch) settings.settingsUpdatedAt = Date.now();
+  try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch {}
+  if (touch) { try { scheduleSync(); } catch {} }
+}
 
 // ---------- IndexedDB ----------
 const DB_NAME = 'utlaggsappen', DB_VERSION = 1;
@@ -2023,10 +2029,10 @@ async function listRemote(folderId) {
   return out.filter((f) => f.appProperties?.reportId);
 }
 const readRemote = (fileId) => driveFetch(`${API}/${fileId}?alt=media`, { raw: true }).then((r) => r.json());
-async function createRemote(folderId, reportId, name, payload) {
+async function createRemote(folderId, name, appProperties, payload) {
   const meta = await driveFetch(`${API}?fields=id`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, parents: [folderId], mimeType: 'application/json', appProperties: { utlaggsappen: 'report', reportId, schema: String(SYNC_SCHEMA) } }),
+    body: JSON.stringify({ name, parents: [folderId], mimeType: 'application/json', appProperties: { schema: String(SYNC_SCHEMA), ...appProperties } }),
   });
   return writeRemote(meta.id, payload);
 }
@@ -2057,8 +2063,40 @@ function mergeMeta(existing, mine) {
 }
 const remoteFileName = (r) => `${safeFileName(r.title || 'Utlägg')} (${String(r.id).slice(0, 8)}).utlagg.json`;
 
+// -- signatur och standardvärden --
+// Signaturen och standardvärdena ligger i en egen fil, så att de finns på alla
+// enheter. API-nyckeln och klient-ID:t är INTE med – de stannar på enheten.
+const SYNCED_SETTINGS = ['name', 'employeeNo', 'company', 'purpose', 'destination', 'project', 'kst', 'account', 'signature'];
+function profilePayload() {
+  const s = {};
+  for (const k of SYNCED_SETTINGS) s[k] = settings[k] ?? '';
+  return { schema: SYNC_SCHEMA, app: 'utlaggsappen', kind: 'profile', updatedAt: settings.settingsUpdatedAt || 0, writtenBy: { deviceId: sync.deviceId, label: settings.deviceName || '' }, settings: s };
+}
+async function syncProfile(folderId) {
+  const q = "appProperties has { key='utlaggsappen' and value='profile' } and trashed=false";
+  const found = await driveFetch(`${API}?q=${encodeURIComponent(q)}&spaces=drive&fields=files(id)&pageSize=5`);
+  const file = found.files?.[0];
+  const localAt = settings.settingsUpdatedAt || 0;
+  if (!file) {
+    if (localAt) await createRemote(folderId, 'Signatur och standardvärden.utlagg.json', { utlaggsappen: 'profile' }, profilePayload());
+    return;
+  }
+  let data = null;
+  try { data = await readRemote(file.id); } catch (e) { console.warn('Kunde inte läsa profilen', e); return; }
+  const remoteAt = (data && data.app === 'utlaggsappen' && data.settings) ? (data.updatedAt || 0) : -1;
+  if (remoteAt > localAt) {
+    for (const k of SYNCED_SETTINGS) if (data.settings[k] !== undefined) settings[k] = data.settings[k];
+    settings.settingsUpdatedAt = remoteAt;
+    saveSettings(false);
+    renderSettings(); if (current) renderSignHint();
+    return;
+  }
+  if (remoteAt === localAt) return;
+  await writeRemote(file.id, profilePayload());
+}
+
 // -- själva synken --
-let syncing = null, syncAgain = false, syncTimer = null;
+let syncing = null, queuedSync = null, syncTimer = null;
 function scheduleSync() {
   if (!syncEnabled() || needsAuth) return;
   clearTimeout(syncTimer);
@@ -2085,11 +2123,18 @@ function renderSync() {
   $('btnGDisconnect').hidden = !on || !sync.account;
   setSyncStatus(syncStatusText(), needsAuth || sync.lastError ? 'bad' : '');
 }
-async function syncNow({ interactive = false } = {}) {
-  if (!syncEnabled()) return;
-  if (syncing) { syncAgain = true; return syncing; }
+// Körs en åt gången. Anropas den under en pågående körning ställs en ny i kö,
+// och det returnerade löftet väntar på den – annars kunde ändringar man just
+// gjort hamna utanför den synk man trodde att man väntade på.
+function syncNow(opts = {}) {
+  if (!syncEnabled()) return Promise.resolve();
+  if (!syncing) { syncing = doSync(opts).finally(() => { syncing = null; }); return syncing; }
+  if (!queuedSync) queuedSync = syncing.catch(() => {}).then(() => { queuedSync = null; return syncNow(opts); });
+  return queuedSync;
+}
+async function doSync({ interactive = false } = {}) {
   if (!navigator.onLine) { renderSync(); return; }
-  syncing = (async () => {
+  {
     setSyncStatus('Synkar…', 'busy');
     try {
       if (interactive) await getToken({ interactive: true });
@@ -2097,6 +2142,7 @@ async function syncNow({ interactive = false } = {}) {
       for (const t of sync.pendingTombstones.splice(0)) {
         try { await pushTombstone(folderId, t); } catch { sync.pendingTombstones.push(t); }
       }
+      try { await syncProfile(folderId); } catch (e) { console.warn('Kunde inte synka signaturen', e); }
       const remote = await listRemote(folderId);
       const byId = new Map(remote.map((f) => [f.appProperties.reportId, f]));
       let changed = false;
@@ -2130,7 +2176,7 @@ async function syncNow({ interactive = false } = {}) {
       for (const r of await dbAll('reports')) {
         const known = sync.files[r.id];
         const f = byId.get(r.id);
-        if (!f) { const res = await createRemote(folderId, r.id, remoteFileName(r), reportPayload(r)); sync.files[r.id] = { fileId: res.id, remoteModifiedTime: res.modifiedTime, syncedUpdatedAt: r.updatedAt }; }
+        if (!f) { const res = await createRemote(folderId, remoteFileName(r), { utlaggsappen: 'report', reportId: r.id }, reportPayload(r)); sync.files[r.id] = { fileId: res.id, remoteModifiedTime: res.modifiedTime, syncedUpdatedAt: r.updatedAt }; }
         else if (!known || known.syncedUpdatedAt !== r.updatedAt) {
           const res = await writeRemote(f.id, reportPayload(r));
           sync.files[r.id] = { fileId: f.id, remoteModifiedTime: res.modifiedTime, syncedUpdatedAt: r.updatedAt };
@@ -2143,17 +2189,15 @@ async function syncNow({ interactive = false } = {}) {
       if (e.status === 401 || /inloggning/i.test(e.message)) needsAuth = true;
       sync.lastError = e.message; saveSync();
     } finally {
-      renderSync(); syncing = null;
-      if (syncAgain) { syncAgain = false; scheduleSync(); }
+      renderSync();
     }
-  })();
-  return syncing;
+  }
 }
 async function pushTombstone(folderId, t) {
   const payload = { schema: SYNC_SCHEMA, app: 'utlaggsappen', deleted: true, writtenBy: { deviceId: sync.deviceId }, report: { id: t.id, title: t.title, updatedAt: t.at, deletedAt: t.at }, attachmentsMeta: [] };
   const known = sync.files[t.id];
   if (known?.fileId) { try { await writeRemote(known.fileId, payload); return; } catch (e) { if (e.status !== 404) throw e; } }
-  await createRemote(folderId, t.id, `${safeFileName(t.title || 'Utlägg')} (${String(t.id).slice(0, 8)}).utlagg.json`, payload);
+  await createRemote(folderId, `${safeFileName(t.title || 'Utlägg')} (${String(t.id).slice(0, 8)}).utlagg.json`, { utlaggsappen: 'report', reportId: t.id }, payload);
 }
 async function removeLocalReport(id) {
   for (const a of await dbByIndex('attachments', 'reportId', id)) await dbDel('attachments', a.id);
@@ -2233,7 +2277,7 @@ document.addEventListener('visibilitychange', () => {
 })();
 
 // Exponeras för tester och felsökning
-window.__utlagg = { syncNow, saveReportNow: () => saveReport.flush(), parseReceiptText, parsePageReceipts, clusterColumns, splitColumnsByWords, fitFormScale, formHeightAt, planPages, detectColumns, amountState, reconcileAmounts, rowNet, reportTotals, findRateBreakdown, findNet, buildPdf, buildXlsx, addFiles, get state() { return { current, attachments, settings }; }, openReport, newReport, loadReports, get reports() { return reports; } };
+window.__utlagg = { syncNow, saveReportNow: () => saveReport.flush(), saveSettingsNow: () => saveSettings(), parseReceiptText, parsePageReceipts, clusterColumns, splitColumnsByWords, fitFormScale, formHeightAt, planPages, detectColumns, amountState, reconcileAmounts, rowNet, reportTotals, findRateBreakdown, findNet, buildPdf, buildXlsx, addFiles, get state() { return { current, attachments, settings }; }, openReport, newReport, loadReports, get reports() { return reports; } };
 </script>
 </body>
 </html>
